@@ -209,11 +209,21 @@ const Store = {
     let reg = this.getAlocacao(anoId, mes, colaboradorId, projetoId);
     if(!percentual || percentual<=0){
       if(reg) this.data.alocacoes = this.data.alocacoes.filter(a=>a!==reg);
-    }else{
-      if(reg){ reg.percentual = percentual; }
-      else{ this.data.alocacoes.push({ id:uid(), anoId, mes, colaboradorId, projetoId, percentual }); }
+      this.save();
+      return { ok:true };
     }
+    // trava: a soma de % de um colaborador entre todos os projetos, no mesmo mês,
+    // nunca pode passar de 100% — senão o custo de folha calculado ultrapassaria
+    // o salário real da pessoa.
+    const totalOutrosProjetos = this.totalAlocadoColaborador(anoId, mes, colaboradorId) - (reg ? reg.percentual : 0);
+    if(totalOutrosProjetos + percentual > 100.001){
+      const disponivel = Math.max(0, 100 - totalOutrosProjetos);
+      return { ok:false, msg:`Isso passaria de 100%. Esse colaborador já tem ${totalOutrosProjetos}% em outros projetos neste mês (sobram ${disponivel}%).` };
+    }
+    if(reg){ reg.percentual = percentual; }
+    else{ this.data.alocacoes.push({ id:uid(), anoId, mes, colaboradorId, projetoId, percentual }); }
     this.save();
+    return { ok:true };
   },
 
   getAlocacoesDoMes(anoId, mes){
@@ -350,5 +360,24 @@ const Store = {
       });
     });
     return { linhas, totalColaboradores: vistos.size };
+  },
+
+  // Período (primeiro/último mês com % > 0) de um colaborador dentro de um
+  // projeto, derivado direto das alocações — não é um campo separado.
+  periodoColaboradorNoProjeto(anoId, colaboradorId, projetoId){
+    const meses = this.data.alocacoes
+      .filter(a=>a.anoId===anoId && a.colaboradorId===colaboradorId && a.projetoId===projetoId && a.percentual>0)
+      .map(a=>a.mes);
+    if(meses.length===0) return null;
+    return { min: Math.min(...meses), max: Math.max(...meses) };
+  },
+
+  // Todos os projetos (de um ano) em que um colaborador teve alguma alocação,
+  // com o período derivado — usado na tela de detalhe do colaborador.
+  projetosDoColaborador(anoId, colaboradorId){
+    return this.data.projetos
+      .filter(p=>p.anoId===anoId)
+      .map(p=>({ projeto:p, periodo: this.periodoColaboradorNoProjeto(anoId, colaboradorId, p.id) }))
+      .filter(x=>x.periodo);
   }
 };

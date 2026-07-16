@@ -224,6 +224,35 @@
       </div>
     </section>
 
+    <!-- COLABORADOR — DETALHE (em quais projetos ele está, e com que % em cada mês) -->
+    <section class="page" id="page-colaborador-detalhe">
+      <button class="ghost-btn" id="btnVoltarColaboradores" style="margin-bottom:14px;">← Voltar para Colaboradores</button>
+
+      <div class="page-head">
+        <span class="eyebrow">Colaborador</span>
+        <h1 id="colabDetNome">Colaborador</h1>
+        <p class="muted" id="colabDetSubtitle"></p>
+      </div>
+
+      <div class="panel">
+        <div class="toolbar-row" style="justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:12px;">
+          <h2 style="margin-bottom:0;">Projetos deste colaborador</h2>
+        </div>
+        <div class="ctx-group" style="margin-bottom:12px;">
+          <label style="font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-faint); font-weight:700;">Mês</label>
+          <div class="month-tabs" id="colabMeses"></div>
+        </div>
+        <p class="muted small" id="colabProjetosInfo" style="margin-bottom:12px;"></p>
+        <div class="table-scroll">
+          <table class="data-table" id="tblProjetosColaborador">
+            <thead><tr><th>Projeto</th><th>Período (histórico)</th><th>% neste mês</th><th>Custo no projeto</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="empty-hint" id="colabProjetosEmpty" hidden></p>
+      </div>
+    </section>
+
     <!-- PROJETOS (lista, dentro do ano ativo) -->
     <section class="page" id="page-projetos">
       <div class="page-head">

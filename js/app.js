@@ -15,6 +15,7 @@ const ctx = {
 };
 
 let projetoDetalheId = null; // projeto aberto na página de detalhe
+let colaboradorDetalheId = null; // colaborador aberto na página de detalhe
 let chartEvolucao = null;
 
 // ---------------------------------------------------------------------------
@@ -90,8 +91,10 @@ function renderContextBar(){
 
 function setPage(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.id===`page-${page}`));
-  const navKey = page==='projeto-detalhe' ? 'projetos' : page;
+  const navKey = page==='projeto-detalhe' ? 'projetos' : (page==='colaborador-detalhe' ? 'colaboradores' : page);
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active', b.dataset.page===navKey));
+  // a barra de Ano/Mês/Projeto só faz sentido no Dashboard; nas outras páginas,
+  // o mês (quando precisa) é escolhido localmente (ex.: dentro do projeto)
   document.querySelector('.context-bar').style.display = (page==='dashboard') ? '' : 'none';
   renderPage(page);
 }
@@ -104,6 +107,7 @@ function renderPage(page){
     case 'colaboradores': return renderColaboradores();
     case 'projetos': return renderProjetos();
     case 'projeto-detalhe': return renderProjetoDetalhe();
+    case 'colaborador-detalhe': return renderColaboradorDetalhe();
   }
 }
 
@@ -311,7 +315,7 @@ function renderAnos(){
 function renderColaboradores(){
   document.querySelector('#tblColaboradores tbody').innerHTML = Store.data.colaboradores.map(c=>`
     <tr>
-      <td>${escapeHtml(c.nome)}</td>
+      <td><button class="link-btn" data-action="abrir-colaborador" data-id="${c.id}">${escapeHtml(c.nome)}</button></td>
       <td class="muted">${escapeHtml(c.cargo)}</td>
       <td class="num">${formatCurrency(c.custoMensal)}</td>
       <td class="row-actions">
@@ -504,6 +508,72 @@ function preencherSelectMeses(select){
 }
 
 // ---------------------------------------------------------------------------
+// COLABORADOR — DETALHE (em quais projetos ele está, e com que % em cada mês)
+// ---------------------------------------------------------------------------
+function renderColaboradorDetalhe(){
+  const colab = Store.data.colaboradores.find(c=>c.id===colaboradorDetalheId);
+  if(!colab){ setPage('colaboradores'); return; }
+
+  el('colabDetNome').textContent = colab.nome;
+  el('colabDetSubtitle').textContent = `${colab.cargo} · Custo mensal integral: ${formatCurrency(colab.custoMensal)}`;
+  el('colabMeses').innerHTML = mesTabsHtml(ctx.mes);
+
+  const info = el('colabProjetosInfo');
+  const tbody = document.querySelector('#tblProjetosColaborador tbody');
+  const emptyHint = el('colabProjetosEmpty');
+
+  if(!ctx.anoId){
+    info.textContent = 'Selecione um ano (na aba Anos ou no Dashboard) para ver os projetos deste colaborador.';
+    tbody.innerHTML = '';
+    emptyHint.hidden = true;
+    return;
+  }
+  if(ctx.mes === 'ano'){
+    info.textContent = 'Selecione um mês específico no topo para ver e editar o % deste colaborador em cada projeto (a alocação é sempre mensal).';
+    tbody.innerHTML = '';
+    emptyHint.hidden = true;
+    return;
+  }
+
+  const anoObj = Store.getAno(ctx.anoId);
+  const total = Store.totalAlocadoColaborador(ctx.anoId, ctx.mes, colab.id);
+  const totalClass = total===100 ? 'total-ok' : (total===0 ? '' : 'total-bad');
+  info.innerHTML = `Envolvimento de <strong>${escapeHtml(colab.nome)}</strong> em cada projeto de ${anoObj.ano} durante ${MESES_LONGO[ctx.mes-1]}. Total alocado no mês: <span class="total-cell ${totalClass}" id="colabTotalMes">${total}%</span>.`;
+
+  const projetos = Store.projetosDoAno(ctx.anoId);
+  if(projetos.length===0){
+    tbody.innerHTML = '';
+    emptyHint.hidden = false;
+    emptyHint.textContent = `Nenhum projeto cadastrado em ${anoObj.ano} ainda.`;
+    return;
+  }
+  emptyHint.hidden = true;
+  tbody.innerHTML = projetos.map(p=>{
+    const reg = Store.getAlocacao(ctx.anoId, ctx.mes, colab.id, p.id);
+    const val = reg ? reg.percentual : '';
+    const custo = reg ? colab.custoMensal * (reg.percentual/100) : 0;
+    const periodo = Store.periodoColaboradorNoProjeto(ctx.anoId, colab.id, p.id);
+    const periodoTxt = periodo ? `${MESES[periodo.min-1]} → ${MESES[periodo.max-1]}` : '<span class="muted">—</span>';
+    return `<tr>
+      <td><span class="color-dot" style="background:${p.cor}"></span>${escapeHtml(p.nome)}</td>
+      <td class="mono small">${periodoTxt}</td>
+      <td><input type="number" class="pct" min="0" max="100" step="1" value="${val}"
+            data-projeto="${p.id}" placeholder="0"></td>
+      <td class="num">${formatCurrency(custo)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function atualizarColaboradorDetalheTotal(){
+  const total = Store.totalAlocadoColaborador(ctx.anoId, ctx.mes, colaboradorDetalheId);
+  const cell = el('colabTotalMes');
+  if(cell){
+    cell.textContent = total + '%';
+    cell.className = 'total-cell ' + (total===100 ? 'total-ok' : (total===0 ? '' : 'total-bad'));
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Eventos: navegação e contexto
 // ---------------------------------------------------------------------------
 el('nav').addEventListener('click', e=>{
@@ -632,6 +702,10 @@ document.querySelector('#page-colaboradores').addEventListener('click', e=>{
   const btn = e.target.closest('button[data-action]');
   if(!btn) return;
   const { action, id } = btn.dataset;
+  if(action==='abrir-colaborador'){
+    colaboradorDetalheId = id;
+    setPage('colaborador-detalhe');
+  }
   if(action==='editar-colab'){
     const c = Store.data.colaboradores.find(x=>x.id===id);
     el('colabId').value = c.id;
@@ -737,8 +811,38 @@ el('tblMembrosProjeto').addEventListener('change', e=>{
   const input = e.target.closest('input.pct');
   if(!input) return;
   const projeto = Store.getProjeto(projetoDetalheId);
-  Store.setAlocacao(ctx.anoId, ctx.mes, input.dataset.colab, projeto.id, input.value);
+  const anterior = Store.getAlocacao(ctx.anoId, ctx.mes, input.dataset.colab, projeto.id)?.percentual ?? '';
+  const res = Store.setAlocacao(ctx.anoId, ctx.mes, input.dataset.colab, projeto.id, input.value);
+  if(!res.ok){
+    toast(res.msg);
+    input.value = anterior;
+    return;
+  }
   atualizarLinhaMembro(input.dataset.colab);
+});
+
+// ---------------------------------------------------------------------------
+// Eventos: Colaborador detalhe
+// ---------------------------------------------------------------------------
+el('btnVoltarColaboradores').addEventListener('click', ()=>{ setPage('colaboradores'); });
+
+el('tblProjetosColaborador').addEventListener('change', e=>{
+  const input = e.target.closest('input.pct');
+  if(!input) return;
+  const projetoId = input.dataset.projeto;
+  const anterior = Store.getAlocacao(ctx.anoId, ctx.mes, colaboradorDetalheId, projetoId)?.percentual ?? '';
+  const res = Store.setAlocacao(ctx.anoId, ctx.mes, colaboradorDetalheId, projetoId, input.value);
+  if(!res.ok){
+    toast(res.msg);
+    input.value = anterior;
+    return;
+  }
+  const colab = Store.data.colaboradores.find(c=>c.id===colaboradorDetalheId);
+  const reg = Store.getAlocacao(ctx.anoId, ctx.mes, colaboradorDetalheId, projetoId);
+  const custo = reg ? colab.custoMensal * (reg.percentual/100) : 0;
+  const row = input.closest('tr');
+  row.children[3].textContent = formatCurrency(custo);
+  atualizarColaboradorDetalheTotal();
 });
 
 el('btnCopiarMesAnteriorProjeto').addEventListener('click', ()=>{

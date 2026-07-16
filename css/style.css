@@ -264,6 +264,13 @@ select,input{font-family:inherit; font-size:14px;}
 .field input:focus, .field select:focus, button:focus-visible{
   outline:2px solid var(--lime-600); outline-offset:1px;
 }
+.field input:disabled, .field select:disabled{
+  background:var(--surface-alt); color:var(--ink-faint); cursor:not-allowed;
+}
+button:disabled{
+  opacity:.45; cursor:not-allowed;
+}
+button:disabled:hover{ background:inherit; }
 .field-grow{flex:1; min-width:200px;}
 .field-btn{justify-content:flex-end; flex-direction:row; gap:8px;}
 

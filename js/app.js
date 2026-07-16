@@ -537,17 +537,6 @@ el('btnVoltarProjetos').addEventListener('click', ()=>{ setPage('projetos'); });
 // ---------------------------------------------------------------------------
 // Eventos: Anos + Ganhos gerais
 // ---------------------------------------------------------------------------
-el('formAno').addEventListener('submit', e=>{
-  e.preventDefault();
-  const input = el('inAno');
-  const res = Store.criarAno(input.value);
-  if(!res.ok){ toast(res.msg); return; }
-  input.value = '';
-  ctx.anoId = Store.data.activeAnoId;
-  toast(`Ano ${res.ano.ano} criado.`);
-  renderAnos();
-  renderContextBar();
-});
 
 document.querySelector('#page-anos').addEventListener('click', e=>{
   const btn = e.target.closest('button[data-action]');

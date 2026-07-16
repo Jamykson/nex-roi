@@ -993,6 +993,22 @@ document.querySelector('#tblGastosProjeto').addEventListener('click', e=>{
 // ---------------------------------------------------------------------------
 // Exportar / Importar backup
 // ---------------------------------------------------------------------------
+// Sincronia entre abas: se outra aba/janela deste site salvar dados novos,
+// esta aba recarrega o que está em memória em vez de continuar com a versão
+// antiga (que senão poderia "ressuscitar" algo apagado ao salvar de novo).
+// ---------------------------------------------------------------------------
+window.addEventListener('storage', e=>{
+  if(e.key !== STORAGE_KEY || !e.newValue) return;
+  try{
+    Store.data = JSON.parse(e.newValue);
+    Store.garantirAnosPadrao();
+    if(!Store.getAno(ctx.anoId)) ctx.anoId = Store.data.activeAnoId;
+    toast('Dados atualizados (outra aba salvou algo).');
+    rerenderCurrent();
+  }catch(err){ /* ignora se o valor salvo não for JSON válido */ }
+});
+
+// ---------------------------------------------------------------------------
 el('btnExport').addEventListener('click', ()=>{
   const blob = new Blob([Store.exportJSON()], { type:'application/json' });
   const url = URL.createObjectURL(blob);

@@ -287,11 +287,13 @@
       </div>
 
       <div class="panel">
-        <div class="toolbar-row" style="justify-content:space-between; margin-bottom:10px;">
+        <div class="toolbar-row" style="justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:12px;">
           <h2 style="margin-bottom:0;">Membros envolvidos</h2>
-          <div class="toolbar-row">
-            <button class="ghost-btn" id="btnCopiarMesAnteriorProjeto">Copiar % do mês anterior</button>
-          </div>
+          <button class="ghost-btn" id="btnCopiarMesAnteriorProjeto">Copiar % do mês anterior</button>
+        </div>
+        <div class="ctx-group" style="margin-bottom:12px;">
+          <label style="font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-faint); font-weight:700;">Mês</label>
+          <div class="month-tabs" id="detMeses"></div>
         </div>
         <p class="muted small" id="membrosInfo" style="margin-bottom:12px;"></p>
         <div class="table-scroll">

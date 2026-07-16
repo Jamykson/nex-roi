@@ -66,16 +66,19 @@ function periodoTexto(){
 // ---------------------------------------------------------------------------
 // Context bar (Ano / Mês / Projeto)
 // ---------------------------------------------------------------------------
+function mesTabsHtml(selected){
+  return MESES.map((m,i)=>
+    `<button data-mes="${i+1}" class="${selected===i+1?'active':''}">${m}</button>`
+  ).join('') + `<button data-mes="ano" class="${selected==='ano'?'active':''}">Ano todo</button>`;
+}
+
 function renderContextBar(){
   const selAno = el('ctxAno');
   selAno.innerHTML = Store.data.anos.map(a=>
     `<option value="${a.id}">${a.ano}</option>`).join('') || '<option value="">Nenhum ano criado</option>';
   if(ctx.anoId) selAno.value = ctx.anoId;
 
-  const mesesWrap = el('ctxMeses');
-  mesesWrap.innerHTML = MESES.map((m,i)=>
-    `<button data-mes="${i+1}" class="${ctx.mes===i+1?'active':''}">${m}</button>`
-  ).join('') + `<button data-mes="ano" class="${ctx.mes==='ano'?'active':''}">Ano todo</button>`;
+  el('ctxMeses').innerHTML = mesTabsHtml(ctx.mes);
 
   const selProj = el('ctxProjeto');
   const projetosDoAno = ctx.anoId ? Store.projetosDoAno(ctx.anoId) : [];
@@ -89,7 +92,7 @@ function setPage(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.id===`page-${page}`));
   const navKey = page==='projeto-detalhe' ? 'projetos' : page;
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active', b.dataset.page===navKey));
-  el('ctxProjetoWrap').style.display = (page==='dashboard') ? '' : 'none';
+  document.querySelector('.context-bar').style.display = (page==='dashboard') ? '' : 'none';
   renderPage(page);
 }
 
@@ -393,6 +396,8 @@ function renderProjetoDetalhe(){
 }
 
 function renderMembrosProjeto(projeto){
+  el('detMeses').innerHTML = mesTabsHtml(ctx.mes);
+
   const info = el('membrosInfo');
   const tbody = document.querySelector('#tblMembrosProjeto tbody');
   const emptyHint = el('membrosEmpty');
@@ -501,8 +506,8 @@ el('ctxAno').addEventListener('change', e=>{
   rerenderCurrent();
 });
 
-el('ctxMeses').addEventListener('click', e=>{
-  const btn = e.target.closest('button');
+document.body.addEventListener('click', e=>{
+  const btn = e.target.closest('.month-tabs button');
   if(!btn) return;
   const v = btn.dataset.mes;
   ctx.mes = v==='ano' ? 'ano' : parseInt(v,10);

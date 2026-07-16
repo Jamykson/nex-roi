@@ -517,14 +517,13 @@ function preencherSelectMeses(select){
 }
 
 // Select combinado de "mês + ano de início" de um projeto.
-// Cada opção agrupa os 12 meses dentro do ano a que pertencem (optgroup),
+// Cada opção já mostra o mês e o ano juntos (ex.: "Janeiro de 2026"),
 // e o value guarda os dois dados juntos no formato "anoId::mes".
 function preencherSelectInicio(select, valorAtual){
   const anos = [...Store.data.anos].sort((a,b)=>a.ano-b.ano);
-  select.innerHTML = anos.map(a=>`
-    <optgroup label="${a.ano}">
-      ${MESES_LONGO.map((m,i)=>`<option value="${a.id}::${i+1}">${m}</option>`).join('')}
-    </optgroup>`).join('');
+  select.innerHTML = anos.flatMap(a=>
+    MESES_LONGO.map((m,i)=>`<option value="${a.id}::${i+1}">${m} de ${a.ano}</option>`)
+  ).join('');
   if(valorAtual) select.value = valorAtual;
 }
 

@@ -673,17 +673,27 @@ el('formProjeto').addEventListener('submit', e=>{
   const anoNum = el('projAno').value;
   if(!anoNum){ toast('Informe o ano do projeto.'); return; }
   const anoObj = Store.getOrCriarAno(anoNum);
+
+  const idEditando = el('projId').value;
+  if(idEditando){
+    const projetoAtual = Store.getProjeto(idEditando);
+    if(projetoAtual && projetoAtual.anoId !== anoObj.id){
+      const n = Store.contarRegistrosDoProjetoNoAno(idEditando, projetoAtual.anoId);
+      if(n > 0) toast(`Ano alterado — atenção: ${n} registro(s) (membros/ganhos) de ${Store.getAno(projetoAtual.anoId)?.ano} não foram movidos.`);
+    }
+  }
+
   ctx.anoId = anoObj.id;
   Store.setAnoAtivo(anoObj.id);
   Store.salvarProjeto({
-    id: el('projId').value || null,
+    id: idEditando || null,
     nome: el('projNome').value.trim(),
     anoId: anoObj.id,
     mesInicio: el('projMesInicio').value,
     mesFim: el('projMesFim').value,
     emAndamento: el('projEmAndamento').checked
   });
-  toast(`Projeto salvo em ${anoObj.ano}.`);
+  if(!idEditando) toast(`Projeto salvo em ${anoObj.ano}.`);
   resetFormProjeto();
   renderProjetos();
   renderContextBar();
@@ -713,8 +723,7 @@ document.querySelector('#page-projetos').addEventListener('click', e=>{
     const p = Store.getProjeto(id);
     el('projId').value = p.id;
     el('projNome').value = p.nome;
-    el('projAno').value = Store.getAno(p.anoId).ano;
-    el('projAno').disabled = true;
+    el('projAno').value = Store.getAno(p.anoId)?.ano ?? '';
     el('projMesInicio').value = p.mesInicio || 1;
     el('projEmAndamento').checked = p.emAndamento !== false;
     el('projMesFim').value = p.mesFim || 12;

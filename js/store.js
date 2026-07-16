@@ -149,6 +149,7 @@ const Store = {
       const p = this.data.projetos.find(x=>x.id===id);
       if(p){
         p.nome = nome;
+        if(anoId) p.anoId = anoId;
         if(mesInicio !== undefined) p.mesInicio = parseInt(mesInicio,10);
         p.emAndamento = !!emAndamento;
         p.mesFim = p.emAndamento ? null : parseInt(mesFim,10);
@@ -165,6 +166,14 @@ const Store = {
     this.save();
   },
 
+  // Conta quantos registros (alocações + ganhos + gastos) um projeto tem
+  // dentro de um ano específico — usado pra avisar antes de "mover" o
+  // projeto pra outro ano, já que esses registros não se movem sozinhos.
+  contarRegistrosDoProjetoNoAno(projetoId, anoId){
+    return this.data.alocacoes.filter(a=>a.projetoId===projetoId && a.anoId===anoId).length
+      + this.data.ganhos.filter(g=>g.projetoId===projetoId && g.anoId===anoId).length
+      + this.data.gastosExtras.filter(g=>g.projetoId===projetoId && g.anoId===anoId).length;
+  },
   projetosDoAno(anoId){
     return this.data.projetos.filter(p=>p.anoId===anoId);
   },

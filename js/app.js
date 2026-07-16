@@ -334,6 +334,13 @@ function periodoProjetoLabel(p){
   return `${inicio} → ${MESES[p.mesFim-1]}`;
 }
 
+function tipoProjetoBadge(p){
+  const tipo = p.tipo || 'impacto';
+  return tipo==='cultura'
+    ? `<span class="badge cultura">Cultura</span>`
+    : `<span class="badge impacto">Impacto</span>`;
+}
+
 function renderProjetos(){
   const semAno = !ctx.anoId;
   el('projetosSubtitle').textContent = semAno
@@ -372,6 +379,7 @@ function renderProjetos(){
     return `<tr>
       <td><span class="color-dot" style="background:${p.cor}"></span></td>
       <td><button class="link-btn" data-action="abrir-projeto" data-id="${p.id}">${escapeHtml(p.nome)}</button></td>
+      <td>${tipoProjetoBadge(p)}</td>
       <td class="mono small">${periodoProjetoLabel(p)} ${p.emAndamento?'<span class="badge mensal">em andamento</span>':''}</td>
       <td class="num">${numMembros}</td>
       <td class="num loss-text">${formatCurrency(gasto)}</td>
@@ -395,7 +403,11 @@ function renderProjetoDetalhe(){
 
   el('detalheAno').textContent = ano ? `Projeto · ${ano.ano}` : 'Projeto';
   el('detalheNomeProjeto').textContent = projeto.nome;
-  el('detalheSubtitle').textContent = `${periodoProjetoLabel(projeto)} · Resumo ${periodoTexto()}.`;
+  el('detalheSubtitle').innerHTML = `${periodoProjetoLabel(projeto)} · Resumo ${periodoTexto()} · ${tipoProjetoBadge(projeto)}`;
+
+  const ehCultura = (projeto.tipo || 'impacto') === 'cultura';
+  el('wrapGanhosProjeto').hidden = ehCultura;
+  el('ganhosCulturaAviso').hidden = !ehCultura;
 
   const gasto = metrica(Store.gastoTotal, projetoDetalheId);
   const ganho = metrica(Store.ganho, projetoDetalheId);
@@ -408,7 +420,7 @@ function renderProjetoDetalhe(){
   stamp.classList.toggle('negativo', saldo<0);
 
   renderMembrosProjeto(projeto);
-  renderGanhosProjeto(projeto);
+  if(!ehCultura) renderGanhosProjeto(projeto);
   renderGastosProjeto(projeto);
 }
 
@@ -768,7 +780,8 @@ el('formProjeto').addEventListener('submit', e=>{
     anoId: anoObj.id,
     mesInicio: el('projMesInicio').value,
     mesFim: el('projMesFim').value,
-    emAndamento: el('projEmAndamento').checked
+    emAndamento: el('projEmAndamento').checked,
+    tipo: el('projTipo').value
   });
   if(!idEditando) toast(`Projeto salvo em ${anoObj.ano}.`);
   resetFormProjeto();
@@ -800,8 +813,9 @@ document.querySelector('#page-projetos').addEventListener('click', e=>{
     const p = Store.getProjeto(id);
     el('projId').value = p.id;
     el('projNome').value = p.nome;
-    el('projAno').value = p.anoId;    el('projMesInicio').value = p.mesInicio || 1;
-    el('projEmAndamento').checked = p.emAndamento !== false;
+    el('projAno').value = p.anoId;
+    el('projTipo').value = p.tipo || 'impacto';
+    el('projMesInicio').value = p.mesInicio || 1;    el('projEmAndamento').checked = p.emAndamento !== false;
     el('projMesFim').value = p.mesFim || 12;
     syncProjMesFim();
     el('btnProjSubmit').textContent = 'Salvar alterações';
@@ -888,7 +902,7 @@ wireTipoToggle({ tipoId:'pgastoTipo', wrapFimId:'wrapPGastoMesFim', lblInicioId:
 el('formGanhoProjeto').addEventListener('submit', e=>{
   e.preventDefault();
   const projeto = Store.getProjeto(projetoDetalheId);
-  Store.salvarGanho({
+  const res = Store.salvarGanho({
     id: el('pganhoId').value || null,
     anoId: ctx.anoId,
     projetoId: projeto.id,
@@ -898,6 +912,7 @@ el('formGanhoProjeto').addEventListener('submit', e=>{
     descricao: el('pganhoDescricao').value.trim(),
     valor: el('pganhoValor').value
   });
+  if(res && res.ok===false){ toast(res.msg); return; }
   toast('Ganho salvo.');
   resetFormGanhoProjeto();
   renderProjetoDetalhe();

@@ -154,7 +154,7 @@ const Store = {
   },
 
   // ---------------- Projetos (pertencem a um ano) ----------------
-  salvarProjeto({id, nome, anoId, mesInicio, mesFim, emAndamento}){
+  salvarProjeto({id, nome, anoId, mesInicio, mesFim, emAndamento, tipo}){
     if(id){
       const p = this.data.projetos.find(x=>x.id===id);
       if(p){
@@ -163,6 +163,7 @@ const Store = {
         if(mesInicio !== undefined) p.mesInicio = parseInt(mesInicio,10);
         p.emAndamento = !!emAndamento;
         p.mesFim = p.emAndamento ? null : parseInt(mesFim,10);
+        if(tipo) p.tipo = tipo;
       }
     }else{
       const cor = PROJECT_COLORS[this.data.projetos.length % PROJECT_COLORS.length];
@@ -170,7 +171,8 @@ const Store = {
         id: uid(), nome, anoId, cor,
         mesInicio: parseInt(mesInicio,10) || 1,
         emAndamento: !!emAndamento,
-        mesFim: emAndamento ? null : (parseInt(mesFim,10) || 12)
+        mesFim: emAndamento ? null : (parseInt(mesFim,10) || 12),
+        tipo: tipo || 'impacto'
       });
     }
     this.save();
@@ -272,7 +274,13 @@ const Store = {
     return registro;
   },
 
-  salvarGanho(campos){ return this._salvarLancamento('ganhos', campos); },
+  salvarGanho(campos){
+    if(campos.projetoId){
+      const p = this.data.projetos.find(x=>x.id===campos.projetoId);
+      if(p && p.tipo==='cultura') return { ok:false, msg:'Projetos de Cultura não têm ganhos — só gastos.' };
+    }
+    return this._salvarLancamento('ganhos', campos);
+  },
   salvarGastoExtra(campos){ return this._salvarLancamento('gastosExtras', campos); },
 
   removerGanho(id){ this.data.ganhos = this.data.ganhos.filter(g=>g.id!==id); this.save(); },

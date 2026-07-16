@@ -1,0 +1,1888 @@
+{
+  "anos": [
+    {
+      "id": "ano-2026",
+      "ano": 2026
+    }
+  ],
+  "colaboradores": [
+    {
+      "id": "colab-maiara-mendes-0",
+      "nome": "Maiara Mendes",
+      "cargo": "Estagiario II",
+      "custoMensal": 1200
+    },
+    {
+      "id": "colab-mariel-rondon-1",
+      "nome": "Mariel Rondon",
+      "cargo": "Estagiario II",
+      "custoMensal": 1200
+    },
+    {
+      "id": "colab-bruna-melo-2",
+      "nome": "Bruna Melo",
+      "cargo": "Coordenador (a) de Projetos V",
+      "custoMensal": 13209.38
+    },
+    {
+      "id": "colab-maraya-silva-3",
+      "nome": "Maraya Silva",
+      "cargo": "Analista de Projetos I",
+      "custoMensal": 5360.45
+    },
+    {
+      "id": "colab-samila-costa-4",
+      "nome": "Samila Costa",
+      "cargo": "Gerente de Projetos V",
+      "custoMensal": 16155.21
+    },
+    {
+      "id": "colab-andr-rodrigues-5",
+      "nome": "André Rodrigues",
+      "cargo": "Estagiario II",
+      "custoMensal": 1200
+    },
+    {
+      "id": "colab-thiago-gomes-6",
+      "nome": "Thiago Gomes",
+      "cargo": "Estagiario II",
+      "custoMensal": 1200
+    },
+    {
+      "id": "colab-ankier-lima-7",
+      "nome": "Ankier Lima",
+      "cargo": "Estagiario II",
+      "custoMensal": 1200
+    },
+    {
+      "id": "colab-fl-vio-galv-o-8",
+      "nome": "Flávio Galvão",
+      "cargo": "Estagiario III",
+      "custoMensal": 1200
+    },
+    {
+      "id": "colab-alane-nascimento-9",
+      "nome": "Alane Nascimento",
+      "cargo": "Analista de Projetos IV",
+      "custoMensal": 8009.13
+    },
+    {
+      "id": "colab-ana-karoline-10",
+      "nome": "Ana Karoline",
+      "cargo": "Jovem Aprendiz",
+      "custoMensal": 1182.21
+    },
+    {
+      "id": "colab-antonio-holanda-11",
+      "nome": "Antonio Holanda",
+      "cargo": "Estagiario II",
+      "custoMensal": 1200
+    },
+    {
+      "id": "colab-matheus-costa-12",
+      "nome": "Matheus Costa",
+      "cargo": "Estagiario II",
+      "custoMensal": 1200
+    },
+    {
+      "id": "colab-wendel-dantas-13",
+      "nome": "Wendel Dantas",
+      "cargo": "Estagiario II",
+      "custoMensal": 1200
+    },
+    {
+      "id": "colab-maria-rodrigues-14",
+      "nome": "Maria Rodrigues",
+      "cargo": "Estagiario II",
+      "custoMensal": 1200
+    }
+  ],
+  "projetos": [
+    {
+      "id": "proj-estoque-0",
+      "nome": "Estoque+",
+      "cor": "#2C6E8F",
+      "anoId": "ano-2026"
+    },
+    {
+      "id": "proj-arq-org-1",
+      "nome": "Arq. Org.",
+      "cor": "#B5762B",
+      "anoId": "ano-2026"
+    },
+    {
+      "id": "proj-dpi-2",
+      "nome": "DPI",
+      "cor": "#5B7A3A",
+      "anoId": "ano-2026"
+    },
+    {
+      "id": "proj-csc-3",
+      "nome": "CSC",
+      "cor": "#8A4B7A",
+      "anoId": "ano-2026"
+    },
+    {
+      "id": "proj-insp-emp-4",
+      "nome": "Insp. Emp.",
+      "cor": "#3A6B6B",
+      "anoId": "ano-2026"
+    },
+    {
+      "id": "proj-clube-da-leitura-5",
+      "nome": "Clube da Leitura",
+      "cor": "#A2472F",
+      "anoId": "ano-2026"
+    }
+  ],
+  "alocacoes": [
+    {
+      "id": "aloc-0",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-maiara-mendes-0",
+      "projetoId": "proj-estoque-0",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-1",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-maiara-mendes-0",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-2",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-maiara-mendes-0",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-3",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-mariel-rondon-1",
+      "projetoId": "proj-csc-3",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-4",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-mariel-rondon-1",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-5",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-estoque-0",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-6",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-7",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-dpi-2",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-8",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-csc-3",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-9",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-10",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-11",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-maraya-silva-3",
+      "projetoId": "proj-csc-3",
+      "percentual": 50.0
+    },
+    {
+      "id": "aloc-12",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-estoque-0",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-13",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-14",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-dpi-2",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-15",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-csc-3",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-16",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-17",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-18",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-estoque-0",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-19",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-csc-3",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-20",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-21",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-thiago-gomes-6",
+      "projetoId": "proj-dpi-2",
+      "percentual": 50.0
+    },
+    {
+      "id": "aloc-22",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-thiago-gomes-6",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 50.0
+    },
+    {
+      "id": "aloc-23",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-ankier-lima-7",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 50.0
+    },
+    {
+      "id": "aloc-24",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-fl-vio-galv-o-8",
+      "projetoId": "proj-estoque-0",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-25",
+      "anoId": "ano-2026",
+      "mes": 1,
+      "colaboradorId": "colab-fl-vio-galv-o-8",
+      "projetoId": "proj-dpi-2",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-26",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-maiara-mendes-0",
+      "projetoId": "proj-estoque-0",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-27",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-maiara-mendes-0",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-28",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-maiara-mendes-0",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-29",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-mariel-rondon-1",
+      "projetoId": "proj-csc-3",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-30",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-mariel-rondon-1",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-31",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-estoque-0",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-32",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-33",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-dpi-2",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-34",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-csc-3",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-35",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-36",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-37",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-maraya-silva-3",
+      "projetoId": "proj-csc-3",
+      "percentual": 70.0
+    },
+    {
+      "id": "aloc-38",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-estoque-0",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-39",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-40",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-dpi-2",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-41",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-csc-3",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-42",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-43",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-44",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-estoque-0",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-45",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-csc-3",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-46",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-47",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-thiago-gomes-6",
+      "projetoId": "proj-dpi-2",
+      "percentual": 50.0
+    },
+    {
+      "id": "aloc-48",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-thiago-gomes-6",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 50.0
+    },
+    {
+      "id": "aloc-49",
+      "anoId": "ano-2026",
+      "mes": 2,
+      "colaboradorId": "colab-ankier-lima-7",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 50.0
+    },
+    {
+      "id": "aloc-50",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-maiara-mendes-0",
+      "projetoId": "proj-estoque-0",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-51",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-maiara-mendes-0",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-52",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-maiara-mendes-0",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-53",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-mariel-rondon-1",
+      "projetoId": "proj-csc-3",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-54",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-mariel-rondon-1",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-55",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-estoque-0",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-56",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-57",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-dpi-2",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-58",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-csc-3",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-59",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-60",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-61",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-maraya-silva-3",
+      "projetoId": "proj-estoque-0",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-62",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-maraya-silva-3",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 30.0
+    },
+    {
+      "id": "aloc-63",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-maraya-silva-3",
+      "projetoId": "proj-csc-3",
+      "percentual": 30.0
+    },
+    {
+      "id": "aloc-64",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-maraya-silva-3",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-65",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-estoque-0",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-66",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-67",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-dpi-2",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-68",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-csc-3",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-69",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-70",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-71",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-estoque-0",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-72",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-csc-3",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-73",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-74",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-thiago-gomes-6",
+      "projetoId": "proj-dpi-2",
+      "percentual": 50.0
+    },
+    {
+      "id": "aloc-75",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-thiago-gomes-6",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 50.0
+    },
+    {
+      "id": "aloc-76",
+      "anoId": "ano-2026",
+      "mes": 3,
+      "colaboradorId": "colab-ankier-lima-7",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 50.0
+    },
+    {
+      "id": "aloc-77",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-mariel-rondon-1",
+      "projetoId": "proj-csc-3",
+      "percentual": 25.0
+    },
+    {
+      "id": "aloc-78",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-mariel-rondon-1",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 25.0
+    },
+    {
+      "id": "aloc-79",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-mariel-rondon-1",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 25.0
+    },
+    {
+      "id": "aloc-80",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-estoque-0",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-81",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-82",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-dpi-2",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-83",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-csc-3",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-84",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-85",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-86",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-maraya-silva-3",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 35.0
+    },
+    {
+      "id": "aloc-87",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-maraya-silva-3",
+      "projetoId": "proj-csc-3",
+      "percentual": 35.0
+    },
+    {
+      "id": "aloc-88",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-maraya-silva-3",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-89",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-estoque-0",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-90",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-91",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-dpi-2",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-92",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-csc-3",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-93",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-94",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-95",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-estoque-0",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-96",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-csc-3",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-97",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-98",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-thiago-gomes-6",
+      "projetoId": "proj-dpi-2",
+      "percentual": 50.0
+    },
+    {
+      "id": "aloc-99",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-thiago-gomes-6",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 50.0
+    },
+    {
+      "id": "aloc-100",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-ankier-lima-7",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 40.0
+    },
+    {
+      "id": "aloc-101",
+      "anoId": "ano-2026",
+      "mes": 4,
+      "colaboradorId": "colab-ankier-lima-7",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 50.0
+    },
+    {
+      "id": "aloc-102",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-alane-nascimento-9",
+      "projetoId": "proj-estoque-0",
+      "percentual": 30.0
+    },
+    {
+      "id": "aloc-103",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-alane-nascimento-9",
+      "projetoId": "proj-dpi-2",
+      "percentual": 30.0
+    },
+    {
+      "id": "aloc-104",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-alane-nascimento-9",
+      "projetoId": "proj-csc-3",
+      "percentual": 30.0
+    },
+    {
+      "id": "aloc-105",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-alane-nascimento-9",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-106",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-ana-karoline-10",
+      "projetoId": "proj-estoque-0",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-107",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-ana-karoline-10",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 90.0
+    },
+    {
+      "id": "aloc-108",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-estoque-0",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-109",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-110",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-dpi-2",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-111",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-csc-3",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-112",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-113",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-114",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-maraya-silva-3",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 40.0
+    },
+    {
+      "id": "aloc-115",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-maraya-silva-3",
+      "projetoId": "proj-csc-3",
+      "percentual": 40.0
+    },
+    {
+      "id": "aloc-116",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-maraya-silva-3",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-117",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-estoque-0",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-118",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-119",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-dpi-2",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-120",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-csc-3",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-121",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-122",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-123",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-estoque-0",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-124",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-csc-3",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-125",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 33.3333
+    },
+    {
+      "id": "aloc-126",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-antonio-holanda-11",
+      "projetoId": "proj-estoque-0",
+      "percentual": 80.0
+    },
+    {
+      "id": "aloc-127",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-antonio-holanda-11",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-128",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-ankier-lima-7",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 40.0
+    },
+    {
+      "id": "aloc-129",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-ankier-lima-7",
+      "projetoId": "proj-dpi-2",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-130",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-ankier-lima-7",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 40.0
+    },
+    {
+      "id": "aloc-131",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-matheus-costa-12",
+      "projetoId": "proj-dpi-2",
+      "percentual": 15.0
+    },
+    {
+      "id": "aloc-132",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-matheus-costa-12",
+      "projetoId": "proj-csc-3",
+      "percentual": 85.0
+    },
+    {
+      "id": "aloc-133",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-wendel-dantas-13",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 5.0
+    },
+    {
+      "id": "aloc-134",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-wendel-dantas-13",
+      "projetoId": "proj-dpi-2",
+      "percentual": 85.0
+    },
+    {
+      "id": "aloc-135",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-wendel-dantas-13",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-136",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-maria-rodrigues-14",
+      "projetoId": "proj-csc-3",
+      "percentual": 70.0
+    },
+    {
+      "id": "aloc-137",
+      "anoId": "ano-2026",
+      "mes": 5,
+      "colaboradorId": "colab-maria-rodrigues-14",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 30.0
+    },
+    {
+      "id": "aloc-138",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-alane-nascimento-9",
+      "projetoId": "proj-estoque-0",
+      "percentual": 30.0
+    },
+    {
+      "id": "aloc-139",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-alane-nascimento-9",
+      "projetoId": "proj-dpi-2",
+      "percentual": 30.0
+    },
+    {
+      "id": "aloc-140",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-alane-nascimento-9",
+      "projetoId": "proj-csc-3",
+      "percentual": 30.0
+    },
+    {
+      "id": "aloc-141",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-alane-nascimento-9",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-142",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-ana-karoline-10",
+      "projetoId": "proj-estoque-0",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-143",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-ana-karoline-10",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 90.0
+    },
+    {
+      "id": "aloc-144",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-estoque-0",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-145",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-146",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-dpi-2",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-147",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-csc-3",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-148",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-149",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-150",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-maraya-silva-3",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 40.0
+    },
+    {
+      "id": "aloc-151",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-maraya-silva-3",
+      "projetoId": "proj-csc-3",
+      "percentual": 40.0
+    },
+    {
+      "id": "aloc-152",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-maraya-silva-3",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-153",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-estoque-0",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-154",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-155",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-dpi-2",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-156",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-csc-3",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-157",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-158",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-159",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-estoque-0",
+      "percentual": 50.0
+    },
+    {
+      "id": "aloc-160",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 50.0
+    },
+    {
+      "id": "aloc-161",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-antonio-holanda-11",
+      "projetoId": "proj-estoque-0",
+      "percentual": 80.0
+    },
+    {
+      "id": "aloc-162",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-antonio-holanda-11",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-163",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-ankier-lima-7",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 40.0
+    },
+    {
+      "id": "aloc-164",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-ankier-lima-7",
+      "projetoId": "proj-dpi-2",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-165",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-ankier-lima-7",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 40.0
+    },
+    {
+      "id": "aloc-166",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-matheus-costa-12",
+      "projetoId": "proj-dpi-2",
+      "percentual": 40.0
+    },
+    {
+      "id": "aloc-167",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-matheus-costa-12",
+      "projetoId": "proj-csc-3",
+      "percentual": 60.0
+    },
+    {
+      "id": "aloc-168",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-wendel-dantas-13",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 5.0
+    },
+    {
+      "id": "aloc-169",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-wendel-dantas-13",
+      "projetoId": "proj-dpi-2",
+      "percentual": 80.0
+    },
+    {
+      "id": "aloc-170",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-wendel-dantas-13",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 15.0
+    },
+    {
+      "id": "aloc-171",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-maria-rodrigues-14",
+      "projetoId": "proj-csc-3",
+      "percentual": 40.0
+    },
+    {
+      "id": "aloc-172",
+      "anoId": "ano-2026",
+      "mes": 6,
+      "colaboradorId": "colab-maria-rodrigues-14",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 60.0
+    },
+    {
+      "id": "aloc-173",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-alane-nascimento-9",
+      "projetoId": "proj-estoque-0",
+      "percentual": 30.0
+    },
+    {
+      "id": "aloc-174",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-alane-nascimento-9",
+      "projetoId": "proj-dpi-2",
+      "percentual": 30.0
+    },
+    {
+      "id": "aloc-175",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-alane-nascimento-9",
+      "projetoId": "proj-csc-3",
+      "percentual": 30.0
+    },
+    {
+      "id": "aloc-176",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-alane-nascimento-9",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-177",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-ana-karoline-10",
+      "projetoId": "proj-estoque-0",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-178",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-ana-karoline-10",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 90.0
+    },
+    {
+      "id": "aloc-179",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-estoque-0",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-180",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-181",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-dpi-2",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-182",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-csc-3",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-183",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-184",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-bruna-melo-2",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 10.0
+    },
+    {
+      "id": "aloc-185",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-maraya-silva-3",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 40.0
+    },
+    {
+      "id": "aloc-186",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-maraya-silva-3",
+      "projetoId": "proj-csc-3",
+      "percentual": 40.0
+    },
+    {
+      "id": "aloc-187",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-maraya-silva-3",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-188",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-estoque-0",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-189",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-190",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-dpi-2",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-191",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-csc-3",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-192",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-193",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-samila-costa-4",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 2.0
+    },
+    {
+      "id": "aloc-194",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-estoque-0",
+      "percentual": 50.0
+    },
+    {
+      "id": "aloc-195",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-andr-rodrigues-5",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 50.0
+    },
+    {
+      "id": "aloc-196",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-antonio-holanda-11",
+      "projetoId": "proj-estoque-0",
+      "percentual": 80.0
+    },
+    {
+      "id": "aloc-197",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-antonio-holanda-11",
+      "projetoId": "proj-clube-da-leitura-5",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-198",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-ankier-lima-7",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 40.0
+    },
+    {
+      "id": "aloc-199",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-ankier-lima-7",
+      "projetoId": "proj-dpi-2",
+      "percentual": 20.0
+    },
+    {
+      "id": "aloc-200",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-ankier-lima-7",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 40.0
+    },
+    {
+      "id": "aloc-201",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-matheus-costa-12",
+      "projetoId": "proj-dpi-2",
+      "percentual": 40.0
+    },
+    {
+      "id": "aloc-202",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-matheus-costa-12",
+      "projetoId": "proj-csc-3",
+      "percentual": 60.0
+    },
+    {
+      "id": "aloc-203",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-wendel-dantas-13",
+      "projetoId": "proj-arq-org-1",
+      "percentual": 5.0
+    },
+    {
+      "id": "aloc-204",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-wendel-dantas-13",
+      "projetoId": "proj-dpi-2",
+      "percentual": 80.0
+    },
+    {
+      "id": "aloc-205",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-wendel-dantas-13",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 15.0
+    },
+    {
+      "id": "aloc-206",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-maria-rodrigues-14",
+      "projetoId": "proj-csc-3",
+      "percentual": 40.0
+    },
+    {
+      "id": "aloc-207",
+      "anoId": "ano-2026",
+      "mes": 7,
+      "colaboradorId": "colab-maria-rodrigues-14",
+      "projetoId": "proj-insp-emp-4",
+      "percentual": 60.0
+    }
+  ],
+  "ganhos": [
+    {
+      "id": "ganho-0",
+      "anoId": "ano-2026",
+      "projetoId": "proj-dpi-2",
+      "tipo": "mensal",
+      "mesInicio": 3,
+      "mesFim": 8,
+      "descricao": "Saving de mensalidade Pódio",
+      "valor": 2100
+    },
+    {
+      "id": "ganho-1",
+      "anoId": "ano-2026",
+      "projetoId": "proj-dpi-2",
+      "tipo": "pontual",
+      "mesInicio": 4,
+      "mesFim": 4,
+      "descricao": "Saving de mensalidade Qulture Rocks",
+      "valor": 13324.87
+    },
+    {
+      "id": "ganho-2",
+      "anoId": "ano-2026",
+      "projetoId": "proj-dpi-2",
+      "tipo": "mensal",
+      "mesInicio": 5,
+      "mesFim": 12,
+      "descricao": "Saving de mensalidade Qulture Rocks",
+      "valor": 23741.77
+    },
+    {
+      "id": "ganho-3",
+      "anoId": "ano-2026",
+      "projetoId": "proj-estoque-0",
+      "tipo": "pontual",
+      "mesInicio": 7,
+      "mesFim": 7,
+      "descricao": "Saving de mensalidade IS Collector (51 licenças foram canceladas)",
+      "valor": 11628
+    },
+    {
+      "id": "ganho-4",
+      "anoId": "ano-2026",
+      "projetoId": "proj-estoque-0",
+      "tipo": "mensal",
+      "mesInicio": 8,
+      "mesFim": 12,
+      "descricao": "Saving de mensalidade IS Collector (100 licenças foram canceladas)",
+      "valor": 22800
+    },
+    {
+      "id": "ganho-5",
+      "anoId": "ano-2026",
+      "projetoId": null,
+      "tipo": "mensal",
+      "mesInicio": 8,
+      "mesFim": 12,
+      "descricao": "Saving de mensalidade LG Sistemas",
+      "valor": 21338.65
+    },
+    {
+      "id": "ganho-6",
+      "anoId": "ano-2026",
+      "projetoId": null,
+      "tipo": "mensal",
+      "mesInicio": 8,
+      "mesFim": 12,
+      "descricao": "Saving de mensalidade Ponto Tel",
+      "valor": 7975.98
+    },
+    {
+      "id": "ganho-7",
+      "anoId": "ano-2026",
+      "projetoId": null,
+      "tipo": "mensal",
+      "mesInicio": 9,
+      "mesFim": 12,
+      "descricao": "Saving de mensalidade Solides",
+      "valor": 5909.79
+    }
+  ],
+  "gastosExtras": [],
+  "activeAnoId": "ano-2026"
+}

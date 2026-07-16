@@ -10,6 +10,7 @@ const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov'
 const MESES_LONGO = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 const PROJECT_COLORS = ['#2C6E8F','#B5762B','#5B7A3A','#8A4B7A','#3A6B6B','#A2472F','#5A5FA6','#7A8A2C'];
+const ANO_BASE = 2020; // desde quando os anos existem por padrão (época do primeiro projeto)
 
 function uid(){
   return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
@@ -46,12 +47,31 @@ const Store = {
       this._storageOk = false;
       this.data = defaultData();
     }
-    // saneamento: garante todas as chaves existem (útil após updates do app)
+
+    /// saneamento: garante todas as chaves existem (útil após updates do app)
     const base = defaultData();
     for(const k in base){
       if(!(k in this.data)) this.data[k] = base[k];
     }
+    this.garantirAnosPadrao();
     return this.data;
+  },
+
+  // Garante que os anos de ANO_BASE até o ano civil atual sempre existam.
+  // Isso substitui a criação "digitou, criou": os anos existem numa faixa fixa,
+  // e um ano novo só aparece quando o calendário realmente vira (ex.: 2027).
+  garantirAnosPadrao(){
+    const anoAtual = new Date().getFullYear();
+    for(let a = ANO_BASE; a <= anoAtual; a++){
+      if(!this.data.anos.some(x=>x.ano===a)){
+        this.data.anos.push({ id: uid(), ano: a });
+      }
+    }
+    this.data.anos.sort((a,b)=>a.ano-b.ano);
+    if(!this.data.activeAnoId){
+      const atual = this.data.anos.find(a=>a.ano===anoAtual);
+      this.data.activeAnoId = (atual || this.data.anos[this.data.anos.length-1])?.id || null;
+    }
   },
 
   // Nunca deixa uma falha de armazenamento (ex.: localStorage bloqueado dentro de
@@ -89,19 +109,9 @@ const Store = {
     return { ok:true, ano: novo };
   },
 
-  // Acha o ano pelo número; se não existir ainda, cria na hora.
-  // Usado pelo formulário de Projeto, que agora pode citar um ano novo direto.
-  getOrCriarAno(anoNum){
-    anoNum = parseInt(anoNum, 10);
-    let ano = this.data.anos.find(a=>a.ano===anoNum);
-    if(!ano){
-      ano = { id: uid(), ano: anoNum };
-      this.data.anos.push(ano);
-      this.data.anos.sort((a,b)=>a.ano-b.ano);
-    }
-    if(!this.data.activeAnoId) this.data.activeAnoId = ano.id;
-    this.save();
-    return ano;
+  // Acha o ano pelo número (usado internamente; anos agora vêm de garantirAnosPadrao)
+  getAnoPorNumero(anoNum){
+    return this.data.anos.find(a=>a.ano===parseInt(anoNum,10));
   },
 
   removerAno(anoId){

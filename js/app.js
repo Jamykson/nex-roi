@@ -333,13 +333,15 @@ function periodoProjetoLabel(p){
 function renderProjetos(){
   const semAno = !ctx.anoId;
   el('projetosSubtitle').textContent = semAno
-    ? 'Nenhum ano selecionado ainda — crie seu primeiro projeto abaixo e o ano é criado automaticamente.'
+    ? 'Selecione um ano no formulário abaixo para começar.'
     : `Projetos cadastrados em ${Store.getAno(ctx.anoId).ano}.`;
   preencherSelectMeses(el('projMesInicio'));
   preencherSelectMeses(el('projMesFim'));
-  if(!el('projAno').value && !el('projId').value){
-    el('projAno').value = semAno ? new Date().getFullYear() : Store.getAno(ctx.anoId).ano;
-  }
+
+  const selAno = el('projAno');
+  const valorAtual = el('projId').value ? selAno.value : (ctx.anoId || '');
+  selAno.innerHTML = Store.data.anos.map(a=>`<option value="${a.id}">${a.ano}</option>`).join('');
+  if(valorAtual) selAno.value = valorAtual;
 
   const tbody = document.querySelector('#tblProjetos tbody');
   const emptyHint = el('projetosEmpty');
@@ -670,9 +672,8 @@ syncProjMesFim();
 
 el('formProjeto').addEventListener('submit', e=>{
   e.preventDefault();
-  const anoNum = el('projAno').value;
-  if(!anoNum){ toast('Informe o ano do projeto.'); return; }
-  const anoObj = Store.getOrCriarAno(anoNum);
+  const anoObj = Store.getAno(el('projAno').value);
+  if(!anoObj){ toast('Selecione o ano do projeto.'); return; }
 
   const idEditando = el('projId').value;
   if(idEditando){
@@ -723,8 +724,7 @@ document.querySelector('#page-projetos').addEventListener('click', e=>{
     const p = Store.getProjeto(id);
     el('projId').value = p.id;
     el('projNome').value = p.nome;
-    el('projAno').value = Store.getAno(p.anoId)?.ano ?? '';
-    el('projMesInicio').value = p.mesInicio || 1;
+    el('projAno').value = p.anoId;    el('projMesInicio').value = p.mesInicio || 1;
     el('projEmAndamento').checked = p.emAndamento !== false;
     el('projMesFim').value = p.mesFim || 12;
     syncProjMesFim();

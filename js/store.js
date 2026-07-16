@@ -129,13 +129,23 @@ const Store = {
   },
 
   // ---------------- Projetos (pertencem a um ano) ----------------
-  salvarProjeto({id, nome, anoId}){
+  salvarProjeto({id, nome, anoId, mesInicio, mesFim, emAndamento}){
     if(id){
       const p = this.data.projetos.find(x=>x.id===id);
-      if(p) p.nome = nome;
+      if(p){
+        p.nome = nome;
+        if(mesInicio !== undefined) p.mesInicio = parseInt(mesInicio,10);
+        p.emAndamento = !!emAndamento;
+        p.mesFim = p.emAndamento ? null : parseInt(mesFim,10);
+      }
     }else{
       const cor = PROJECT_COLORS[this.data.projetos.length % PROJECT_COLORS.length];
-      this.data.projetos.push({ id: uid(), nome, anoId, cor });
+      this.data.projetos.push({
+        id: uid(), nome, anoId, cor,
+        mesInicio: parseInt(mesInicio,10) || 1,
+        emAndamento: !!emAndamento,
+        mesFim: emAndamento ? null : (parseInt(mesFim,10) || 12)
+      });
     }
     this.save();
   },

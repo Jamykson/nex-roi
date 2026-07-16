@@ -240,19 +240,35 @@
         <p class="muted" id="projetosSubtitle">Projetos cadastrados no ano selecionado.</p>
       </div>
       <div class="panel panel-form">
-        <form id="formProjeto" class="inline-form">
+        <form id="formProjeto" class="grid-form">
           <input type="hidden" id="projId">
           <div class="field field-grow">
             <label>Nome do projeto</label>
             <input type="text" id="projNome" placeholder="Ex.: Estoque+" required>
           </div>
-          <button type="submit" class="primary-btn" id="btnProjSubmit">Adicionar projeto</button>
-          <button type="button" class="ghost-btn" id="btnProjCancel" hidden>Cancelar edição</button>
+          <div class="field">
+            <label>Início</label>
+            <select id="projMesInicio"></select>
+          </div>
+          <div class="field" id="wrapProjMesFim">
+            <label>Término</label>
+            <select id="projMesFim"></select>
+          </div>
+          <div class="field" style="justify-content:center;">
+            <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:var(--ink); cursor:pointer;">
+              <input type="checkbox" id="projEmAndamento" style="width:16px; height:16px;" checked>
+              Em andamento
+            </label>
+          </div>
+          <div class="field field-btn">
+            <button type="submit" class="primary-btn" id="btnProjSubmit">Adicionar projeto</button>
+            <button type="button" class="ghost-btn" id="btnProjCancel" hidden>Cancelar edição</button>
+          </div>
         </form>
       </div>
       <div class="panel">
         <table class="data-table" id="tblProjetos">
-          <thead><tr><th></th><th>Projeto</th><th>Membros no mês</th><th>Gasto</th><th>Ganho</th><th>Saldo</th><th></th></tr></thead>
+          <thead><tr><th></th><th>Projeto</th><th>Período</th><th>Membros no mês</th><th>Gasto</th><th>Ganho</th><th>Saldo</th><th></th></tr></thead>
           <tbody></tbody>
         </table>
         <p class="empty-hint" id="projetosEmpty" hidden></p>

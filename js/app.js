@@ -324,12 +324,20 @@ function renderColaboradores(){
 // ---------------------------------------------------------------------------
 // PROJETOS (lista, dentro do ano ativo)
 // ---------------------------------------------------------------------------
+function periodoProjetoLabel(p){
+  const inicio = MESES[(p.mesInicio||1)-1];
+  if(p.emAndamento || !p.mesFim) return `${inicio} → em andamento`;
+  return `${inicio} → ${MESES[p.mesFim-1]}`;
+}
+
 function renderProjetos(){
   const semAno = !ctx.anoId;
   el('projetosSubtitle').textContent = semAno
     ? 'Crie e selecione um ano primeiro, na aba "Anos".'
     : `Projetos cadastrados em ${Store.getAno(ctx.anoId).ano}.`;
-  el('formProjeto').querySelectorAll('input,button').forEach(elm=>elm.disabled = semAno);
+  el('formProjeto').querySelectorAll('input,select,button').forEach(elm=>elm.disabled = semAno);
+  preencherSelectMeses(el('projMesInicio'));
+  preencherSelectMeses(el('projMesFim'));
 
   const tbody = document.querySelector('#tblProjetos tbody');
   const emptyHint = el('projetosEmpty');
@@ -356,6 +364,7 @@ function renderProjetos(){
     return `<tr>
       <td><span class="color-dot" style="background:${p.cor}"></span></td>
       <td><button class="link-btn" data-action="abrir-projeto" data-id="${p.id}">${escapeHtml(p.nome)}</button></td>
+      <td class="mono small">${periodoProjetoLabel(p)} ${p.emAndamento?'<span class="badge mensal">em andamento</span>':''}</td>
       <td class="num">${numMembros}</td>
       <td class="num loss-text">${formatCurrency(gasto)}</td>
       <td class="num gain-text">${formatCurrency(ganho)}</td>
@@ -378,7 +387,7 @@ function renderProjetoDetalhe(){
 
   el('detalheAno').textContent = ano ? `Projeto · ${ano.ano}` : 'Projeto';
   el('detalheNomeProjeto').textContent = projeto.nome;
-  el('detalheSubtitle').textContent = `Resumo ${periodoTexto()}.`;
+  el('detalheSubtitle').textContent = `${periodoProjetoLabel(projeto)} · Resumo ${periodoTexto()}.`;
 
   const gasto = metrica(Store.gastoTotal, projetoDetalheId);
   const ganho = metrica(Store.ganho, projetoDetalheId);
@@ -651,10 +660,23 @@ document.querySelector('#page-colaboradores').addEventListener('click', e=>{
 // ---------------------------------------------------------------------------
 // Eventos: Projetos (lista)
 // ---------------------------------------------------------------------------
+function syncProjMesFim(){
+  el('wrapProjMesFim').style.display = el('projEmAndamento').checked ? 'none' : '';
+}
+el('projEmAndamento').addEventListener('change', syncProjMesFim);
+syncProjMesFim();
+
 el('formProjeto').addEventListener('submit', e=>{
   e.preventDefault();
   if(!ctx.anoId){ toast('Crie e selecione um ano primeiro.'); return; }
-  Store.salvarProjeto({ id: el('projId').value || null, nome: el('projNome').value.trim(), anoId: ctx.anoId });
+  Store.salvarProjeto({
+    id: el('projId').value || null,
+    nome: el('projNome').value.trim(),
+    anoId: ctx.anoId,
+    mesInicio: el('projMesInicio').value,
+    mesFim: el('projMesFim').value,
+    emAndamento: el('projEmAndamento').checked
+  });
   toast('Projeto salvo.');
   resetFormProjeto();
   renderProjetos();
@@ -666,6 +688,8 @@ el('btnProjCancel').addEventListener('click', resetFormProjeto);
 function resetFormProjeto(){
   el('projId').value = '';
   el('formProjeto').reset();
+  el('projEmAndamento').checked = true;
+  syncProjMesFim();
   el('btnProjSubmit').textContent = 'Adicionar projeto';
   el('btnProjCancel').hidden = true;
 }
@@ -682,8 +706,13 @@ document.querySelector('#page-projetos').addEventListener('click', e=>{
     const p = Store.getProjeto(id);
     el('projId').value = p.id;
     el('projNome').value = p.nome;
+    el('projMesInicio').value = p.mesInicio || 1;
+    el('projEmAndamento').checked = p.emAndamento !== false;
+    el('projMesFim').value = p.mesFim || 12;
+    syncProjMesFim();
     el('btnProjSubmit').textContent = 'Salvar alterações';
     el('btnProjCancel').hidden = false;
+    window.scrollTo({top:0, behavior:'smooth'});
   }
   if(action==='remover-proj'){
     if(!confirm('Remover este projeto? Os membros e ganhos ligados a ele também serão removidos.')) return;

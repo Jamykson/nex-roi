@@ -275,8 +275,7 @@ button:disabled:hover{ background:inherit; }
 .field-btn{justify-content:flex-end; flex-direction:row; gap:8px;}
 
 .inline-form{display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap;}
-.grid-form{display:grid; grid-template-columns:1.4fr 1.4fr 1fr auto; gap:12px; align-items:end;}
-@media (max-width:900px){.grid-form{grid-template-columns:1fr 1fr;}}
+.grid-form{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; align-items:end;}
 
 .lancamento-form{display:flex; flex-wrap:wrap; gap:12px; align-items:end;}
 .lancamento-form .field{min-width:140px;}
@@ -324,9 +323,11 @@ button:disabled:hover{ background:inherit; }
 
 .link-btn{
   background:none; border:none; padding:0; font:inherit; font-weight:700;
-  color:var(--navy-700); cursor:pointer; text-align:left;
+  color:var(--teal-600); cursor:pointer; text-align:left;
+  text-decoration:underline; text-decoration-color:var(--line); text-underline-offset:3px;
 }
-.link-btn:hover{color:var(--teal-600); text-decoration:underline;}
+.link-btn::after{ content:' →'; opacity:.55; font-weight:500; }
+.link-btn:hover{color:var(--navy-700); text-decoration-color:currentColor;}
 
 .badge{display:inline-block; padding:2px 10px; border-radius:99px; font-size:10.5px; font-weight:700; letter-spacing:.02em; font-family:var(--font-mono);}
 .badge.pontual{background:var(--surface-alt); color:var(--ink-muted); border:1px solid var(--line);}

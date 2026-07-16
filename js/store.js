@@ -89,6 +89,21 @@ const Store = {
     return { ok:true, ano: novo };
   },
 
+  // Acha o ano pelo número; se não existir ainda, cria na hora.
+  // Usado pelo formulário de Projeto, que agora pode citar um ano novo direto.
+  getOrCriarAno(anoNum){
+    anoNum = parseInt(anoNum, 10);
+    let ano = this.data.anos.find(a=>a.ano===anoNum);
+    if(!ano){
+      ano = { id: uid(), ano: anoNum };
+      this.data.anos.push(ano);
+      this.data.anos.sort((a,b)=>a.ano-b.ano);
+    }
+    if(!this.data.activeAnoId) this.data.activeAnoId = ano.id;
+    this.save();
+    return ano;
+  },
+
   removerAno(anoId){
     const projetosDoAno = this.data.projetos.filter(p=>p.anoId===anoId).map(p=>p.id);
     this.data.anos = this.data.anos.filter(a=>a.id!==anoId);

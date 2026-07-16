@@ -333,18 +333,20 @@ function periodoProjetoLabel(p){
 function renderProjetos(){
   const semAno = !ctx.anoId;
   el('projetosSubtitle').textContent = semAno
-    ? 'Crie e selecione um ano primeiro, na aba "Anos".'
+    ? 'Nenhum ano selecionado ainda — crie seu primeiro projeto abaixo e o ano é criado automaticamente.'
     : `Projetos cadastrados em ${Store.getAno(ctx.anoId).ano}.`;
-  el('formProjeto').querySelectorAll('input,select,button').forEach(elm=>elm.disabled = semAno);
   preencherSelectMeses(el('projMesInicio'));
   preencherSelectMeses(el('projMesFim'));
+  if(!el('projAno').value && !el('projId').value){
+    el('projAno').value = semAno ? new Date().getFullYear() : Store.getAno(ctx.anoId).ano;
+  }
 
   const tbody = document.querySelector('#tblProjetos tbody');
   const emptyHint = el('projetosEmpty');
   if(semAno){
     tbody.innerHTML = '';
     emptyHint.hidden = false;
-    emptyHint.textContent = 'Nenhum ano selecionado.';
+    emptyHint.textContent = 'Nenhum ano selecionado ainda.';
     return;
   }
   const projetos = Store.projetosDoAno(ctx.anoId);
@@ -668,16 +670,20 @@ syncProjMesFim();
 
 el('formProjeto').addEventListener('submit', e=>{
   e.preventDefault();
-  if(!ctx.anoId){ toast('Crie e selecione um ano primeiro.'); return; }
+  const anoNum = el('projAno').value;
+  if(!anoNum){ toast('Informe o ano do projeto.'); return; }
+  const anoObj = Store.getOrCriarAno(anoNum);
+  ctx.anoId = anoObj.id;
+  Store.setAnoAtivo(anoObj.id);
   Store.salvarProjeto({
     id: el('projId').value || null,
     nome: el('projNome').value.trim(),
-    anoId: ctx.anoId,
+    anoId: anoObj.id,
     mesInicio: el('projMesInicio').value,
     mesFim: el('projMesFim').value,
     emAndamento: el('projEmAndamento').checked
   });
-  toast('Projeto salvo.');
+  toast(`Projeto salvo em ${anoObj.ano}.`);
   resetFormProjeto();
   renderProjetos();
   renderContextBar();
@@ -688,6 +694,7 @@ el('btnProjCancel').addEventListener('click', resetFormProjeto);
 function resetFormProjeto(){
   el('projId').value = '';
   el('formProjeto').reset();
+  el('projAno').disabled = false;
   el('projEmAndamento').checked = true;
   syncProjMesFim();
   el('btnProjSubmit').textContent = 'Adicionar projeto';
@@ -706,6 +713,8 @@ document.querySelector('#page-projetos').addEventListener('click', e=>{
     const p = Store.getProjeto(id);
     el('projId').value = p.id;
     el('projNome').value = p.nome;
+    el('projAno').value = Store.getAno(p.anoId).ano;
+    el('projAno').disabled = true;
     el('projMesInicio').value = p.mesInicio || 1;
     el('projEmAndamento').checked = p.emAndamento !== false;
     el('projMesFim').value = p.mesFim || 12;

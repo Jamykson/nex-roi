@@ -739,6 +739,19 @@ el('formProjeto').addEventListener('submit', e=>{
   if(!anoObj){ toast('Selecione o ano do projeto.'); return; }
 
   const idEditando = el('projId').value;
+  const nomeDigitado = el('projNome').value.trim();
+
+  // Avisa (sem bloquear) se já existe um projeto com esse nome no mesmo ano —
+  // evita duplicatas por clique duplo ou campo não limpo entre criações.
+  if(!idEditando){
+    const jaExiste = Store.projetosDoAno(anoObj.id)
+      .some(p => p.nome.trim().toLowerCase() === nomeDigitado.toLowerCase());
+    if(jaExiste){
+      const seguir = confirm(`Já existe um projeto chamado "${nomeDigitado}" em ${anoObj.ano}. Quer criar outro mesmo assim?`);
+      if(!seguir) return;
+    }
+  }
+
   if(idEditando){
     const projetoAtual = Store.getProjeto(idEditando);
     if(projetoAtual && projetoAtual.anoId !== anoObj.id){
@@ -751,7 +764,7 @@ el('formProjeto').addEventListener('submit', e=>{
   Store.setAnoAtivo(anoObj.id);
   Store.salvarProjeto({
     id: idEditando || null,
-    nome: el('projNome').value.trim(),
+    nome: nomeDigitado,
     anoId: anoObj.id,
     mesInicio: el('projMesInicio').value,
     mesFim: el('projMesFim').value,

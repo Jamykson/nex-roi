@@ -346,10 +346,10 @@ function renderProjetos(){
   el('projetosSubtitle').textContent = semAno
     ? 'Selecione um ano no formulário abaixo para começar.'
     : `Projetos cadastrados em ${Store.getAno(ctx.anoId).ano}.`;
-    const projInicio = el('projInicio');
-    const valorInicioAtual = el('projId').value ? projInicio.value : (ctx.anoId ? `${ctx.anoId}::1` : '');
-    preencherSelectInicio(projInicio, valorInicioAtual);
-    preencherSelectMeses(el('projMesFim'));
+  const projInicio = el('projInicio');
+  const valorInicioAtual = el('projId').value ? projInicio.value : (ctx.anoId ? `${ctx.anoId}::1` : '');
+  preencherSelectInicio(projInicio, valorInicioAtual);
+  preencherSelectMeses(el('projMesFim'));
 
   const tbody = document.querySelector('#tblProjetos tbody');
   const emptyHint = el('projetosEmpty');
@@ -515,6 +515,10 @@ function renderGastosProjeto(projeto){
 function preencherSelectMeses(select){
   select.innerHTML = MESES_LONGO.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
 }
+
+// Select combinado de "mês + ano de início" de um projeto.
+// Cada opção agrupa os 12 meses dentro do ano a que pertencem (optgroup),
+// e o value guarda os dois dados juntos no formato "anoId::mes".
 function preencherSelectInicio(select, valorAtual){
   const anos = [...Store.data.anos].sort((a,b)=>a.ano-b.ano);
   select.innerHTML = anos.map(a=>`

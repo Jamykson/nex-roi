@@ -346,13 +346,10 @@ function renderProjetos(){
   el('projetosSubtitle').textContent = semAno
     ? 'Selecione um ano no formulário abaixo para começar.'
     : `Projetos cadastrados em ${Store.getAno(ctx.anoId).ano}.`;
-  preencherSelectMeses(el('projMesInicio'));
-  preencherSelectMeses(el('projMesFim'));
-
-  const selAno = el('projAno');
-  const valorAtual = el('projId').value ? selAno.value : (ctx.anoId || '');
-  selAno.innerHTML = Store.data.anos.map(a=>`<option value="${a.id}">${a.ano}</option>`).join('');
-  if(valorAtual) selAno.value = valorAtual;
+    const projInicio = el('projInicio');
+    const valorInicioAtual = el('projId').value ? projInicio.value : (ctx.anoId ? `${ctx.anoId}::1` : '');
+    preencherSelectInicio(projInicio, valorInicioAtual);
+    preencherSelectMeses(el('projMesFim'));
 
   const tbody = document.querySelector('#tblProjetos tbody');
   const emptyHint = el('projetosEmpty');
@@ -517,6 +514,14 @@ function renderGastosProjeto(projeto){
 
 function preencherSelectMeses(select){
   select.innerHTML = MESES_LONGO.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+}
+function preencherSelectInicio(select, valorAtual){
+  const anos = [...Store.data.anos].sort((a,b)=>a.ano-b.ano);
+  select.innerHTML = anos.map(a=>`
+    <optgroup label="${a.ano}">
+      ${MESES_LONGO.map((m,i)=>`<option value="${a.id}::${i+1}">${m}</option>`).join('')}
+    </optgroup>`).join('');
+  if(valorAtual) select.value = valorAtual;
 }
 
 // ---------------------------------------------------------------------------
@@ -747,8 +752,9 @@ syncProjMesFim();
 
 el('formProjeto').addEventListener('submit', e=>{
   e.preventDefault();
-  const anoObj = Store.getAno(el('projAno').value);
-  if(!anoObj){ toast('Selecione o ano do projeto.'); return; }
+  const [anoIdSelecionado, mesInicioSelecionado] = el('projInicio').value.split('::');
+  const anoObj = Store.getAno(anoIdSelecionado);
+  if(!anoObj){ toast('Selecione o mês/ano de início do projeto.'); return; }
 
   const idEditando = el('projId').value;
   const nomeDigitado = el('projNome').value.trim();
@@ -778,7 +784,7 @@ el('formProjeto').addEventListener('submit', e=>{
     id: idEditando || null,
     nome: nomeDigitado,
     anoId: anoObj.id,
-    mesInicio: el('projMesInicio').value,
+    mesInicio: mesInicioSelecionado,
     mesFim: el('projMesFim').value,
     emAndamento: el('projEmAndamento').checked,
     tipo: el('projTipo').value
@@ -794,7 +800,6 @@ el('btnProjCancel').addEventListener('click', resetFormProjeto);
 function resetFormProjeto(){
   el('projId').value = '';
   el('formProjeto').reset();
-  el('projAno').disabled = false;
   el('projEmAndamento').checked = true;
   syncProjMesFim();
   el('btnProjSubmit').textContent = 'Adicionar projeto';
@@ -813,9 +818,9 @@ document.querySelector('#page-projetos').addEventListener('click', e=>{
     const p = Store.getProjeto(id);
     el('projId').value = p.id;
     el('projNome').value = p.nome;
-    el('projAno').value = p.anoId;
+    preencherSelectInicio(el('projInicio'), `${p.anoId}::${p.mesInicio || 1}`);
     el('projTipo').value = p.tipo || 'impacto';
-    el('projMesInicio').value = p.mesInicio || 1;    el('projEmAndamento').checked = p.emAndamento !== false;
+    el('projEmAndamento').checked = p.emAndamento !== false;
     el('projMesFim').value = p.mesFim || 12;
     syncProjMesFim();
     el('btnProjSubmit').textContent = 'Salvar alterações';

@@ -507,8 +507,15 @@ function renderMembrosProjeto(projeto){
     emptyHint.hidden = true;
     return;
   }
+  const fimProjeto = projeto.emAndamento ? 12 : (projeto.mesFim || 12);
+  if(ctx.mes < (projeto.mesInicio||1) || ctx.mes > fimProjeto){
+    info.textContent = `"${projeto.nome}" não estava ativo em ${MESES_LONGO[ctx.mes-1]} (período do projeto: ${MESES[(projeto.mesInicio||1)-1]} → ${projeto.emAndamento ? 'em andamento' : MESES[fimProjeto-1]}).`;
+    tbody.innerHTML = '';
+    emptyHint.hidden = true;
+    return;
+  }
   info.textContent = `Percentual de envolvimento de cada colaborador em "${projeto.nome}" durante ${MESES_LONGO[ctx.mes-1]}.`;
-
+  
   const colaboradores = Store.data.colaboradores;
   if(colaboradores.length===0){
     tbody.innerHTML = '';
@@ -658,11 +665,23 @@ function renderColaboradorDetalhe(){
   const totalClass = total===100 ? 'total-ok' : (total===0 ? '' : 'total-bad');
   info.innerHTML = `Envolvimento de <strong>${escapeHtml(colab.nome)}</strong> em cada projeto de ${anoObj.ano} durante ${MESES_LONGO[ctx.mes-1]}. Total alocado no mês: <span class="total-cell ${totalClass}" id="colabTotalMes">${total}%</span>.`;
 
-  const projetos = Store.projetosDoAno(ctx.anoId);
-  if(projetos.length===0){
+  const projetosDoAno = Store.projetosDoAno(ctx.anoId);
+  if(projetosDoAno.length===0){
     tbody.innerHTML = '';
     emptyHint.hidden = false;
     emptyHint.textContent = `Nenhum projeto cadastrado em ${anoObj.ano} ainda.`;
+    return;
+  }
+  // só mostra projetos que já tinham começado (e ainda não tinham terminado)
+  // no mês selecionado — evita alocar colaborador antes do projeto existir.
+  const projetos = projetosDoAno.filter(p=>{
+    const fim = p.emAndamento ? 12 : (p.mesFim || 12);
+    return ctx.mes >= (p.mesInicio||1) && ctx.mes <= fim;
+  });
+  if(projetos.length===0){
+    tbody.innerHTML = '';
+    emptyHint.hidden = false;
+    emptyHint.textContent = `Nenhum projeto ativo em ${MESES_LONGO[ctx.mes-1]} de ${anoObj.ano}.`;
     return;
   }
   emptyHint.hidden = true;

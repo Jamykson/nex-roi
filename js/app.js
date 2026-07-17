@@ -457,6 +457,24 @@ function renderProjetoDetalhe(){
   el('detalheNomeProjeto').textContent = projeto.nome;
   el('detalheSubtitle').innerHTML = `${periodoProjetoLabel(projeto)} · Resumo ${periodoTexto()} · ${tipoProjetoBadge(projeto)}`;
 
+  const btnRenovar = el('btnRenovarProjeto');
+  const avisoRenovado = el('renovadoAviso');
+  if(projeto.renovadoParaId){
+    const continuacao = Store.getProjeto(projeto.renovadoParaId);
+    const anoContinuacao = continuacao ? Store.getAno(continuacao.anoId) : null;
+    btnRenovar.hidden = true;
+    avisoRenovado.hidden = false;
+    avisoRenovado.innerHTML = continuacao
+      ? `Este projeto continua em <button class="link-btn" data-action="ir-continuacao" data-id="${continuacao.id}">${anoContinuacao?.ano ?? ''}</button>.`
+      : '';
+  }else if(projeto.emAndamento){
+    btnRenovar.hidden = false;
+    avisoRenovado.hidden = true;
+  }else{
+    btnRenovar.hidden = true;
+    avisoRenovado.hidden = true;
+  }
+
   const ehCultura = (projeto.tipo || 'impacto') === 'cultura';
   el('wrapGanhosProjeto').hidden = ehCultura;
   el('ganhosCulturaAviso').hidden = !ehCultura;
@@ -703,6 +721,25 @@ el('ctxProjeto').addEventListener('change', e=>{
 });
 
 el('btnVoltarProjetos').addEventListener('click', ()=>{ setPage('projetos'); });
+
+el('btnRenovarProjeto').addEventListener('click', ()=>{
+  const res = Store.renovarProjeto(projetoDetalheId);
+  if(!res.ok){ toast(res.msg); return; }
+  toast('Projeto continuado no próximo ano.');
+  projetoDetalheId = res.projeto.id;
+  ctx.anoId = res.projeto.anoId;
+  Store.setAnoAtivo(ctx.anoId);
+  renderProjetoDetalhe();
+});
+
+document.querySelector('#page-projeto-detalhe').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-action="ir-continuacao"]');
+  if(!btn) return;
+  projetoDetalheId = btn.dataset.id;
+  const p = Store.getProjeto(projetoDetalheId);
+  if(p){ ctx.anoId = p.anoId; Store.setAnoAtivo(ctx.anoId); }
+  renderProjetoDetalhe();
+});
 
 el('colabAno').addEventListener('change', e=>{
   ctx.anoId = e.target.value || null;

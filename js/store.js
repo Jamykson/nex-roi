@@ -215,6 +215,43 @@ const Store = {
     this.save();
   },
 
+  // Cria uma cópia deste projeto no ano seguinte ("continuar no próximo ano").
+  // O projeto novo é independente: gasto/ganho/saldo começam do zero, sem
+  // herdar alocações ou lançamentos do projeto original — só nome, tipo e cor.
+  // Guarda o vínculo (renovadoDeId / renovadoParaId) pra exibir "continua em..."
+  // na tela e evitar renovar o mesmo projeto duas vezes.
+  renovarProjeto(projetoId){
+    const original = this.getProjeto(projetoId);
+    if(!original) return { ok:false, msg:'Projeto não encontrado.' };
+    if(original.renovadoParaId) return { ok:false, msg:'Esse projeto já foi continuado num ano seguinte.' };
+    const anoAtual = this.getAno(original.anoId);
+    if(!anoAtual) return { ok:false, msg:'Ano do projeto não encontrado.' };
+
+    const proximoAnoNum = anoAtual.ano + 1;
+    let proximoAno = this.getAnoPorNumero(proximoAnoNum);
+    if(!proximoAno){
+      const res = this.criarAno(proximoAnoNum);
+      if(!res.ok) return res;
+      proximoAno = res.ano;
+    }
+
+    const novo = {
+      id: uid(),
+      nome: original.nome,
+      anoId: proximoAno.id,
+      cor: original.cor,
+      mesInicio: 1,
+      emAndamento: true,
+      mesFim: null,
+      tipo: original.tipo || 'impacto',
+      renovadoDeId: original.id
+    };
+    this.data.projetos.push(novo);
+    original.renovadoParaId = novo.id;
+    this.save();
+    return { ok:true, projeto: novo };
+  },
+
   // Conta quantos registros (alocações + ganhos + gastos) um projeto tem
   // dentro de um ano específico — usado pra avisar antes de "mover" o
   // projeto pra outro ano, já que esses registros não se movem sozinhos.
@@ -231,6 +268,10 @@ const Store = {
 
   removerProjeto(id){
     this.data.projetos = this.data.projetos.filter(p=>p.id!==id);
+    this.data.projetos.forEach(p=>{
+      if(p.renovadoDeId===id) delete p.renovadoDeId;
+      if(p.renovadoParaId===id) delete p.renovadoParaId;
+    });
     this.data.alocacoes = this.data.alocacoes.filter(a=>a.projetoId!==id);
     this.data.ganhos = this.data.ganhos.filter(g=>g.projetoId!==id);
     this.data.gastosExtras = this.data.gastosExtras.filter(g=>g.projetoId!==id);

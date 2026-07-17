@@ -341,41 +341,48 @@ function tipoProjetoBadge(p){
     : `<span class="badge impacto">Impacto</span>`;
 }
 
+// Calcula uma métrica (gasto/ganho) usando o ANO DO PRÓPRIO PROJETO,
+// e não o ano que está selecionado no momento na barra de contexto.
+// Isso é o que permite listar projetos de anos diferentes juntos, cada um
+// com os números certos.
+function metricaProjeto(fn, projeto){
+  if(ctx.mes === 'ano') return Store.agregarAno(projeto.anoId, projeto.id, fn);
+  return fn.call(Store, projeto.anoId, ctx.mes, projeto.id);
+}
+
 function renderProjetos(){
-  const semAno = !ctx.anoId;
-  el('projetosSubtitle').textContent = semAno
-    ? 'Selecione um ano no formulário abaixo para começar.'
-    : `Projetos cadastrados em ${Store.getAno(ctx.anoId).ano}.`;
-  preencherSelectMeses(el('projMesFim'));
-    if(!el('projId').value){
+  el('projetosSubtitle').textContent = 'Todos os projetos cadastrados, de todos os anos.';
+  if(!el('projId').value){
     el('projInicio').value = '';
   }
   preencherSelectMeses(el('projMesFim'));
+
   const tbody = document.querySelector('#tblProjetos tbody');
   const emptyHint = el('projetosEmpty');
-  if(semAno){
-    tbody.innerHTML = '';
-    emptyHint.hidden = false;
-    emptyHint.textContent = 'Nenhum ano selecionado ainda.';
-    return;
-  }
-  const projetos = Store.projetosDoAno(ctx.anoId);
+  const projetos = [...Store.data.projetos].sort((a,b)=>{
+    const anoA = Store.getAno(a.anoId)?.ano || 0;
+    const anoB = Store.getAno(b.anoId)?.ano || 0;
+    if(anoA !== anoB) return anoA - anoB;
+    return (a.mesInicio||1) - (b.mesInicio||1);
+  });
   if(projetos.length===0){
     tbody.innerHTML = '';
     emptyHint.hidden = false;
-    emptyHint.textContent = 'Nenhum projeto cadastrado neste ano ainda. Use o formulário acima para criar o primeiro.';
+    emptyHint.textContent = 'Nenhum projeto cadastrado ainda. Use o formulário acima para criar o primeiro.';
     return;
   }
   emptyHint.hidden = true;
   tbody.innerHTML = projetos.map(p=>{
-    const membros = mes => Store.colaboradoresNoMes(ctx.anoId, mes, p.id).totalColaboradores;
+    const anoObj = Store.getAno(p.anoId);
+    const membros = mes => Store.colaboradoresNoMes(p.anoId, mes, p.id).totalColaboradores;
     const numMembros = ctx.mes==='ano' ? membros(new Date().getMonth()+1) : membros(ctx.mes);
-    const gasto = metrica(Store.gastoTotal, p.id);
-    const ganho = metrica(Store.ganho, p.id);
+    const gasto = metricaProjeto(Store.gastoTotal, p);
+    const ganho = metricaProjeto(Store.ganho, p);
     const saldo = ganho - gasto;
     return `<tr>
       <td><span class="color-dot" style="background:${p.cor}"></span></td>
       <td><button class="link-btn" data-action="abrir-projeto" data-id="${p.id}">${escapeHtml(p.nome)}</button></td>
+      <td class="mono small">${anoObj ? anoObj.ano : '—'}</td>
       <td>${tipoProjetoBadge(p)}</td>
       <td class="mono small">${periodoProjetoLabel(p)} ${p.emAndamento?'<span class="badge mensal">em andamento</span>':''}</td>
       <td class="num">${numMembros}</td>
@@ -389,7 +396,6 @@ function renderProjetos(){
     </tr>`;
   }).join('');
 }
-
 // ---------------------------------------------------------------------------
 // PROJETO — DETALHE (membros + ganhos + gastos extras deste projeto)
 // ---------------------------------------------------------------------------

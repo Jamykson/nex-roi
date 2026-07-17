@@ -155,7 +155,8 @@ select,input{font-family:inherit; font-size:14px;}
 .ctx-group{display:flex; flex-direction:column; gap:6px;}
 .ctx-group label{font-family:var(--font-body); font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-faint); font-weight:700;}
 .ctx-grow{flex:1; min-width:300px;}
-.context-bar select{
+.context-bar select,
+#colabAno{
   padding:8px 10px; border-radius:var(--radius-sm); border:1px solid var(--line);
   background:var(--surface); color:var(--ink); min-width:120px;
 }

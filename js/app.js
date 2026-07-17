@@ -852,6 +852,7 @@ function renderColaboradorDetalhe(){
     const custoBase = Store.custoMensalEfetivo(colab.id, ctx.anoId, ctx.mes);
     const custo = reg ? custoBase * (reg.percentual/100) : 0;
     const periodo = Store.periodoColaboradorNoProjeto(ctx.anoId, colab.id, p.id);
+    const periodoTxt = periodo ? `${MESES[periodo.min-1]} → ${MESES[periodo.max-1]}` : '<span class="muted">—</span>';
     return `<tr>
       <td><span class="color-dot" style="background:${p.cor}"></span>${escapeHtml(p.nome)}</td>
       <td class="mono small">${periodoTxt}</td>

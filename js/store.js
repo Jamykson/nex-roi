@@ -23,6 +23,7 @@ function defaultData(){
     cargos: [],        // {id, nome, salario}
     projetos: [],
     alocacoes: [],     // {id, anoId, mes, colaboradorId, projetoId, percentual}
+    salariosPontuais: [], // {id, colaboradorId, anoId, mes, valor} — sobrescreve custoMensal só naquele mês
     ganhos: [],        // {id, anoId, projetoId|null, tipo, mesInicio, mesFim, descricao, valor}
     gastosExtras: [],  // idem ganhos
     activeAnoId: null
@@ -223,6 +224,7 @@ const Store = {
   removerColaborador(id){
     this.data.colaboradores = this.data.colaboradores.filter(c=>c.id!==id);
     this.data.alocacoes = this.data.alocacoes.filter(a=>a.colaboradorId!==id);
+    this.data.salariosPontuais = this.data.salariosPontuais.filter(s=>s.colaboradorId!==id);
     this.save();
   },
 
@@ -442,14 +444,45 @@ const Store = {
 
   // ---------------- Cálculos agregados ----------------
 
+  // Ajuste pontual de salário: sobrescreve custoMensal só num (ano, mês)
+  // específico — usado quando alguém ganhou/descontou algo fora do padrão.
+  getSalarioPontual(colaboradorId, anoId, mes){
+    return this.data.salariosPontuais.find(s=>
+      s.colaboradorId===colaboradorId && s.anoId===anoId && s.mes===mes);
+  },
+
+  setSalarioPontual(colaboradorId, anoId, mes, valor){
+    const reg = this.getSalarioPontual(colaboradorId, anoId, mes);
+    valor = valor==='' || valor===null || valor===undefined ? null : parseFloat(valor);
+    if(valor===null || isNaN(valor)){
+      // vazio = "usar o padrão" -> remove o ajuste, se existir
+      if(reg) this.data.salariosPontuais = this.data.salariosPontuais.filter(s=>s!==reg);
+    }else if(reg){
+      reg.valor = valor;
+    }else{
+      this.data.salariosPontuais.push({ id:uid(), colaboradorId, anoId, mes, valor });
+    }
+    this.save();
+  },
+
+  // Quanto esse colaborador custa NESTE mês específico: o ajuste pontual,
+  // se existir, ou o custoMensal padrão dele.
+  custoMensalEfetivo(colaboradorId, anoId, mes){
+    const colab = this.data.colaboradores.find(c=>c.id===colaboradorId);
+    if(!colab) return 0;
+    const ajuste = this.getSalarioPontual(colaboradorId, anoId, mes);
+    return ajuste ? ajuste.valor : colab.custoMensal;
+  },
+
   // custo de folha de um colaborador em um mês, opcionalmente restrito a um projeto
   custoFolhaColaborador(anoId, mes, colaboradorId, projetoFiltro){
     const colab = this.data.colaboradores.find(c=>c.id===colaboradorId);
     if(!colab) return 0;
+    const custoBase = this.custoMensalEfetivo(colaboradorId, anoId, mes);
     const alocs = this.getAlocacoesDoMes(anoId, mes).filter(a=>a.colaboradorId===colaboradorId
       && this._matchProjeto(a.projetoId, projetoFiltro));
     const pct = alocs.reduce((s,a)=>s+a.percentual,0);
-    return colab.custoMensal * (pct/100);
+    return custoBase * (pct/100);
   },
 
   // gasto de folha total (todos colaboradores) em um mês, opcionalmente por projeto
@@ -458,7 +491,8 @@ const Store = {
     return alocs.reduce((sum, a)=>{
       const colab = this.data.colaboradores.find(c=>c.id===a.colaboradorId);
       if(!colab) return sum;
-      return sum + colab.custoMensal * (a.percentual/100);
+      const custoBase = this.custoMensalEfetivo(a.colaboradorId, anoId, mes);
+      return sum + custoBase * (a.percentual/100);
     }, 0);
   },
 
@@ -493,7 +527,7 @@ const Store = {
         colaborador: colab,
         projeto: proj,
         percentual: a.percentual,
-        custo: colab.custoMensal * (a.percentual/100)
+        custo: this.custoMensalEfetivo(colab.id, anoId, mes) * (a.percentual/100)
       });
     });
     return { linhas, totalColaboradores: vistos.size };

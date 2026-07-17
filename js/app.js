@@ -661,7 +661,7 @@ function renderMembrosProjeto(projeto){
   tbody.innerHTML = colaboradores.map(c=>{
     const reg = Store.getAlocacao(ctx.anoId, ctx.mes, c.id, projeto.id);
     const val = reg ? reg.percentual : '';
-    const custo = reg ? c.custoMensal * (reg.percentual/100) : 0;
+    const custo = reg ? Store.custoMensalEfetivo(c.id, ctx.anoId, ctx.mes) * (reg.percentual/100) : 0;
     const total = Store.totalAlocadoColaborador(ctx.anoId, ctx.mes, c.id);
     const totalClass = total===100 ? 'total-ok' : (total===0 ? '' : 'total-bad');
     return `<tr>
@@ -679,7 +679,7 @@ function atualizarLinhaMembro(colabId){
   const c = Store.data.colaboradores.find(x=>x.id===colabId);
   const projeto = Store.getProjeto(projetoDetalheId);
   const reg = Store.getAlocacao(ctx.anoId, ctx.mes, colabId, projeto.id);
-  const custo = reg ? c.custoMensal * (reg.percentual/100) : 0;
+  const custo = reg ? Store.custoMensalEfetivo(colabId, ctx.anoId, ctx.mes) * (reg.percentual/100) : 0;
   const row = document.querySelector(`input[data-colab="${colabId}"]`)?.closest('tr');
   if(row) row.children[3].textContent = formatCurrency(custo);
   const total = Store.totalAlocadoColaborador(ctx.anoId, ctx.mes, colabId);
@@ -786,12 +786,16 @@ function renderColaboradorDetalhe(){
     info.textContent = 'Selecione um ano (na aba Anos ou no Dashboard) para ver os projetos deste colaborador.';
     tbody.innerHTML = '';
     emptyHint.hidden = true;
+    el('colabSalarioMes').value = '';
+    el('colabSalarioMesInfo').textContent = '';
     return;
   }
   if(ctx.mes === 'ano'){
     info.textContent = 'Selecione um mês específico no topo para ver e editar o % deste colaborador em cada projeto (a alocação é sempre mensal).';
     tbody.innerHTML = '';
     emptyHint.hidden = true;
+    el('colabSalarioMes').value = '';
+    el('colabSalarioMesInfo').textContent = 'Selecione um mês específico para ajustar o salário dele.';
     return;
   }
 
@@ -799,6 +803,13 @@ function renderColaboradorDetalhe(){
   const total = Store.totalAlocadoColaborador(ctx.anoId, ctx.mes, colab.id);
   const totalClass = total===100 ? 'total-ok' : (total===0 ? '' : 'total-bad');
   info.innerHTML = `Envolvimento de <strong>${escapeHtml(colab.nome)}</strong> em cada projeto de ${anoObj.ano} durante ${MESES_LONGO[ctx.mes-1]}. Total alocado no mês: <span class="total-cell ${totalClass}" id="colabTotalMes">${total}%</span>.`;
+
+  const ajuste = Store.getSalarioPontual(colab.id, ctx.anoId, ctx.mes);
+  el('colabSalarioMes').value = ajuste ? ajuste.valor : '';
+  el('colabSalarioMes').placeholder = `Padrão: ${formatCurrency(colab.custoMensal)}`;
+  el('colabSalarioMesInfo').textContent = ajuste
+    ? `Valor diferente do padrão só em ${MESES_LONGO[ctx.mes-1]} de ${anoObj.ano}.`
+    : '';
 
   if(!Store.colaboradorJaEntrou(colab, anoObj.ano, ctx.mes)){
     tbody.innerHTML = '';
@@ -838,9 +849,9 @@ function renderColaboradorDetalhe(){
   tbody.innerHTML = projetos.map(p=>{
     const reg = Store.getAlocacao(ctx.anoId, ctx.mes, colab.id, p.id);
     const val = reg ? reg.percentual : '';
-    const custo = reg ? colab.custoMensal * (reg.percentual/100) : 0;
+    const custoBase = Store.custoMensalEfetivo(colab.id, ctx.anoId, ctx.mes);
+    const custo = reg ? custoBase * (reg.percentual/100) : 0;
     const periodo = Store.periodoColaboradorNoProjeto(ctx.anoId, colab.id, p.id);
-    const periodoTxt = periodo ? `${MESES[periodo.min-1]} → ${MESES[periodo.max-1]}` : '<span class="muted">—</span>';
     return `<tr>
       <td><span class="color-dot" style="background:${p.cor}"></span>${escapeHtml(p.nome)}</td>
       <td class="mono small">${periodoTxt}</td>
@@ -1282,6 +1293,13 @@ el('tblMembrosProjeto').addEventListener('change', e=>{
 // ---------------------------------------------------------------------------
 el('btnVoltarColaboradores').addEventListener('click', ()=>{ setPage('colaboradores'); });
 
+el('colabSalarioMes').addEventListener('change', e=>{
+  if(!ctx.anoId || ctx.mes==='ano') return;
+  Store.setSalarioPontual(colaboradorDetalheId, ctx.anoId, ctx.mes, e.target.value);
+  toast(e.target.value ? 'Ajuste de salário salvo para este mês.' : 'Voltou a usar o salário padrão neste mês.');
+  renderColaboradorDetalhe();
+});
+
 el('tblProjetosColaborador').addEventListener('change', e=>{
   const input = e.target.closest('input.pct');
   if(!input) return;
@@ -1295,7 +1313,8 @@ el('tblProjetosColaborador').addEventListener('change', e=>{
   }
   const colab = Store.data.colaboradores.find(c=>c.id===colaboradorDetalheId);
   const reg = Store.getAlocacao(ctx.anoId, ctx.mes, colaboradorDetalheId, projetoId);
-  const custo = reg ? colab.custoMensal * (reg.percentual/100) : 0;
+  const custoBase = Store.custoMensalEfetivo(colaboradorDetalheId, ctx.anoId, ctx.mes);
+  const custo = reg ? custoBase * (reg.percentual/100) : 0;
   const row = input.closest('tr');
   row.children[3].textContent = formatCurrency(custo);
   atualizarColaboradorDetalheTotal();

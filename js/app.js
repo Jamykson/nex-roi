@@ -347,7 +347,10 @@ function renderProjetos(){
     ? 'Selecione um ano no formulário abaixo para começar.'
     : `Projetos cadastrados em ${Store.getAno(ctx.anoId).ano}.`;
   preencherSelectMeses(el('projMesFim'));
-
+    if(!el('projId').value){
+    el('projInicio').value = '';
+  }
+  preencherSelectMeses(el('projMesFim'));
   const tbody = document.querySelector('#tblProjetos tbody');
   const emptyHint = el('projetosEmpty');
   if(semAno){

@@ -270,6 +270,10 @@ function renderColaboradoresAgrupados(linhas){
 
 function renderChartEvolucao(){
   const canvas = el('chartEvolucao');
+  if(typeof Chart === 'undefined'){
+    canvas.parentElement.innerHTML = '<p class="empty-hint">Não foi possível carregar a biblioteca do gráfico. Os números seguem corretos nas tabelas acima.</p>';
+    return;
+  }
   if(!ctx.anoId){
     if(chartEvolucao){ chartEvolucao.destroy(); chartEvolucao=null; }
     return;

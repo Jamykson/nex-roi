@@ -53,11 +53,6 @@
         <svg class="icon" viewBox="0 0 20 20" style="width:14px;height:14px"><path d="M10 3v9M6.5 9l3.5 3.5L13.5 9"/><path d="M4 15.5h12"/></svg>
         Exportar dados
       </button>
-      <label class="ghost-btn" for="importFile" title="Restaurar backup (.json)">
-        <svg class="icon" viewBox="0 0 20 20" style="width:14px;height:14px"><path d="M10 12V3M6.5 6.5L10 3l3.5 3.5"/><path d="M4 15.5h12"/></svg>
-        Importar dados
-      </label>
-      <input type="file" id="importFile" accept="application/json" hidden>
     </div>
   </aside>
 
@@ -277,6 +272,7 @@
       <div class="panel">
         <div class="toolbar-row" style="justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:12px;">
           <h2 style="margin-bottom:0;">Projetos deste colaborador</h2>
+          <button class="ghost-btn" id="btnCopiarMesAnteriorColab">Copiar % do mês anterior</button>
         </div>
         <div class="toolbar-row" style="gap:20px; flex-wrap:wrap; margin-bottom:12px;">
           <div class="ctx-group">

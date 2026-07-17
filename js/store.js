@@ -344,6 +344,21 @@ const Store = {
     return { ok:true };
   },
 
+  // Mesma ideia da função acima, mas espelhada: copia, de um colaborador
+  // específico, as % que ele tinha em CADA projeto no mês anterior.
+  copiarAlocacaoColaboradorMesAnterior(anoId, colaboradorId, mesDestino){
+    const mesOrigem = mesDestino - 1;
+    if(mesOrigem < 1) return { ok:false, msg:'Não há mês anterior dentro do ano.' };
+    const origem = this.data.alocacoes.filter(a=>a.anoId===anoId && a.mes===mesOrigem && a.colaboradorId===colaboradorId);
+    if(origem.length===0) return { ok:false, msg:'O mês anterior está vazio para este colaborador.' };
+    this.data.alocacoes = this.data.alocacoes.filter(a=>!(a.anoId===anoId && a.mes===mesDestino && a.colaboradorId===colaboradorId));
+    origem.forEach(a=>{
+      this.data.alocacoes.push({ id:uid(), anoId, mes:mesDestino, colaboradorId, projetoId:a.projetoId, percentual:a.percentual });
+    });
+    this.save();
+    return { ok:true };
+  },
+
   // ---------------- Ganhos / Gastos extras (mesma forma) ----------------
   _salvarLancamento(colecao, campos){
     const { id, projetoId, tipo, mesInicio, mesFim, descricao, valor, anoId } = campos;

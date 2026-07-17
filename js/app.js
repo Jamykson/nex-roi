@@ -1138,6 +1138,14 @@ el('btnCopiarMesAnteriorProjeto').addEventListener('click', ()=>{
   renderMembrosProjeto(Store.getProjeto(projetoDetalheId));
 });
 
+el('btnCopiarMesAnteriorColab').addEventListener('click', ()=>{
+  if(!ctx.anoId || ctx.mes==='ano'){ toast('Selecione um mês específico primeiro.'); return; }
+  const res = Store.copiarAlocacaoColaboradorMesAnterior(ctx.anoId, colaboradorDetalheId, ctx.mes);
+  if(!res.ok){ toast(res.msg); return; }
+  toast('Percentuais copiados do mês anterior.');
+  renderColaboradorDetalhe();
+});
+
 // ---------------------------------------------------------------------------
 // Eventos: Projeto detalhe — Ganhos
 // ---------------------------------------------------------------------------

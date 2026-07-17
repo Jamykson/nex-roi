@@ -335,16 +335,21 @@ function preencherSelectCargos(select, valorAtual){
 
 function renderColaboradores(){
   preencherSelectCargos(el('colabCargo'), el('colabId').value ? el('colabCargo').value : '');
-  document.querySelector('#tblColaboradores tbody').innerHTML = Store.data.colaboradores.map(c=>`
+  document.querySelector('#tblColaboradores tbody').innerHTML = Store.data.colaboradores.map(c=>{
+    const anoEntrada = c.entradaAnoId ? Store.getAno(c.entradaAnoId) : null;
+    const entradaTxt = anoEntrada ? formatarValorInicio(anoEntrada, c.entradaMes) : '<span class="muted">—</span>';
+    return `
     <tr>
       <td><button class="link-btn" data-action="abrir-colaborador" data-id="${c.id}">${escapeHtml(c.nome)}</button></td>
       <td class="muted">${escapeHtml(c.cargo)}</td>
+      <td class="mono small">${entradaTxt}</td>
       <td class="num">${formatCurrency(c.custoMensal)}</td>
       <td class="row-actions">
         <button class="icon-btn" data-action="editar-colab" data-id="${c.id}">Editar</button>
         <button class="icon-btn danger" data-action="remover-colab" data-id="${c.id}">Remover</button>
       </td>
-    </tr>`).join('') || `<tr><td colspan="4" class="empty-hint">Nenhum colaborador cadastrado ainda.</td></tr>`;
+    </tr>`;
+  }).join('') || `<tr><td colspan="5" class="empty-hint">Nenhum colaborador cadastrado ainda.</td></tr>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -516,7 +521,7 @@ function renderMembrosProjeto(projeto){
   }
   info.textContent = `Percentual de envolvimento de cada colaborador em "${projeto.nome}" durante ${MESES_LONGO[ctx.mes-1]}.`;
 
-  
+
   const colaboradores = Store.data.colaboradores;
   if(colaboradores.length===0){
     tbody.innerHTML = '';

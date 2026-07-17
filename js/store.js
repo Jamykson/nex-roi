@@ -173,15 +173,30 @@ const Store = {
   },
 
   // ---------------- Colaboradores ----------------
-  salvarColaborador({id, nome, cargo, custoMensal}){
+  // entradaAnoId/entradaMes são opcionais — colaborador sem data de entrada
+  // cadastrada não tem restrição nenhuma (retrocompatível com quem já existia).
+  salvarColaborador({id, nome, cargo, custoMensal, entradaAnoId, entradaMes}){
     custoMensal = parseFloat(custoMensal) || 0;
+    entradaAnoId = entradaAnoId || null;
+    entradaMes = entradaAnoId ? (parseInt(entradaMes,10) || 1) : null;
     if(id){
       const c = this.data.colaboradores.find(x=>x.id===id);
-      if(c){ c.nome=nome; c.cargo=cargo; c.custoMensal=custoMensal; }
+      if(c){ c.nome=nome; c.cargo=cargo; c.custoMensal=custoMensal; c.entradaAnoId=entradaAnoId; c.entradaMes=entradaMes; }
     }else{
-      this.data.colaboradores.push({ id: uid(), nome, cargo, custoMensal });
+      this.data.colaboradores.push({ id: uid(), nome, cargo, custoMensal, entradaAnoId, entradaMes });
     }
     this.save();
+  },
+
+  // Diz se um colaborador já tinha entrado na empresa num determinado (ano, mês).
+  // Compara pelo NÚMERO do ano (não pelo anoId), pra funcionar mesmo quando o
+  // período consultado é de um "Ano" cadastrado depois da data de entrada.
+  colaboradorJaEntrou(colaborador, anoNum, mes){
+    if(!colaborador.entradaAnoId) return true;
+    const anoEntrada = this.getAno(colaborador.entradaAnoId);
+    if(!anoEntrada) return true;
+    if(anoNum !== anoEntrada.ano) return anoNum > anoEntrada.ano;
+    return mes >= (colaborador.entradaMes || 1);
   },
 
   removerColaborador(id){

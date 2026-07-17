@@ -1300,25 +1300,6 @@ el('btnExport').addEventListener('click', ()=>{
   URL.revokeObjectURL(url);
 });
 
-el('importFile').addEventListener('change', e=>{
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ()=>{
-    try{
-      Store.importJSON(reader.result);
-      ctx.anoId = Store.data.activeAnoId;
-      toast('Backup importado com sucesso.');
-      renderContextBar();
-      setPage('dashboard');
-    }catch(err){
-      toast('Não foi possível ler esse arquivo.');
-    }
-  };
-  reader.readAsText(file);
-  e.target.value = '';
-});
-
 // ---------------------------------------------------------------------------
 // Início
 // ---------------------------------------------------------------------------

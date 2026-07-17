@@ -175,17 +175,38 @@ const Store = {
   // ---------------- Colaboradores ----------------
   // entradaAnoId/entradaMes são opcionais — colaborador sem data de entrada
   // cadastrada não tem restrição nenhuma (retrocompatível com quem já existia).
-  salvarColaborador({id, nome, cargo, custoMensal, entradaAnoId, entradaMes}){
+  // ativo/saidaAnoId/saidaMes seguem o mesmo padrão do "Em andamento" dos
+  // projetos: ativo=true (padrão) não tem saída; ativo=false guarda quando saiu.
+  salvarColaborador({id, nome, cargo, custoMensal, entradaAnoId, entradaMes, ativo, saidaAnoId, saidaMes}){
     custoMensal = parseFloat(custoMensal) || 0;
     entradaAnoId = entradaAnoId || null;
     entradaMes = entradaAnoId ? (parseInt(entradaMes,10) || 1) : null;
+    ativo = ativo !== false;
+    saidaAnoId = ativo ? null : (saidaAnoId || null);
+    saidaMes = (!ativo && saidaAnoId) ? (parseInt(saidaMes,10) || 12) : null;
     if(id){
       const c = this.data.colaboradores.find(x=>x.id===id);
-      if(c){ c.nome=nome; c.cargo=cargo; c.custoMensal=custoMensal; c.entradaAnoId=entradaAnoId; c.entradaMes=entradaMes; }
+      if(c){
+        c.nome=nome; c.cargo=cargo; c.custoMensal=custoMensal;
+        c.entradaAnoId=entradaAnoId; c.entradaMes=entradaMes;
+        c.ativo=ativo; c.saidaAnoId=saidaAnoId; c.saidaMes=saidaMes;
+      }
     }else{
-      this.data.colaboradores.push({ id: uid(), nome, cargo, custoMensal, entradaAnoId, entradaMes });
+      this.data.colaboradores.push({ id: uid(), nome, cargo, custoMensal, entradaAnoId, entradaMes, ativo, saidaAnoId, saidaMes });
     }
     this.save();
+  },
+
+  // Diz se um colaborador já tinha SAÍDO da empresa num determinado (ano, mês).
+  // O mês de saída em si ainda conta como ativo (a pessoa trabalhou até ali);
+  // "já saiu" só passa a valer a partir do mês seguinte.
+  colaboradorJaSaiu(colaborador, anoNum, mes){
+    if(colaborador.ativo !== false) return false;
+    if(!colaborador.saidaAnoId) return false;
+    const anoSaida = this.getAno(colaborador.saidaAnoId);
+    if(!anoSaida) return false;
+    if(anoNum !== anoSaida.ano) return anoNum > anoSaida.ano;
+    return mes > (colaborador.saidaMes || 12);
   },
 
   // Diz se um colaborador já tinha entrado na empresa num determinado (ano, mês).

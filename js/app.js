@@ -515,6 +515,7 @@ function renderMembrosProjeto(projeto){
     return;
   }
   info.textContent = `Percentual de envolvimento de cada colaborador em "${projeto.nome}" durante ${MESES_LONGO[ctx.mes-1]}.`;
+
   
   const colaboradores = Store.data.colaboradores;
   if(colaboradores.length===0){

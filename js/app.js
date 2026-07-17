@@ -324,7 +324,7 @@ function preencherSelectCargos(select, valorAtual){
     return;
   }
   let opcoes = `<option value="">Selecione um cargo…</option>` + cargos.map(c=>
-    `<option value="${escapeHtml(c.nome)}" data-salario="${c.salario}">${escapeHtml(c.nome)} — ${formatCurrency(c.salario)}</option>`
+  `<option value="${escapeHtml(c.nome)}" data-salario="${c.salario}">${escapeHtml(c.nome)}</option>`
   ).join('');
   if(valorAtual && !cargos.some(c=>c.nome===valorAtual)){
     opcoes += `<option value="${escapeHtml(valorAtual)}" selected>${escapeHtml(valorAtual)} (cargo removido)</option>`;

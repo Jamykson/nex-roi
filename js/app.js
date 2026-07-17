@@ -279,8 +279,15 @@ function renderChartEvolucao(){
     return;
   }
   const filtro = projetoFiltroAtual();
+  const anoObj = Store.getAno(ctx.anoId);
+  const anoReal = new Date().getFullYear();
+  const mesRealAtual = new Date().getMonth() + 1;
+  // Só mostra meses que já aconteceram: no ano atual, para até o mês de
+  // hoje (não faz sentido "evoluir" um mês que ainda não chegou); anos
+  // passados mostram os 12 meses normalmente.
+  const ultimoMes = anoObj.ano < anoReal ? 12 : (anoObj.ano === anoReal ? mesRealAtual : 0);
   const gastos = [], ganhos = [];
-  for(let m=1;m<=12;m++){
+  for(let m=1;m<=ultimoMes;m++){
     gastos.push(Store.gastoTotal(ctx.anoId, m, filtro));
     ganhos.push(Store.ganho(ctx.anoId, m, filtro));
   }
@@ -288,7 +295,7 @@ function renderChartEvolucao(){
   chartEvolucao = new Chart(canvas, {
     type: 'bar',
     data: {
-      labels: MESES,
+      labels: MESES.slice(0, ultimoMes),
       datasets: [
         { label:'Gasto', data:gastos, backgroundColor:'#C2483C', borderRadius:4, maxBarThickness:26 },
         { label:'Ganho', data:ganhos, backgroundColor:'#0E7C6B', borderRadius:4, maxBarThickness:26 }

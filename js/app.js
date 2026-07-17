@@ -346,10 +346,6 @@ function renderProjetos(){
   el('projetosSubtitle').textContent = semAno
     ? 'Selecione um ano no formulário abaixo para começar.'
     : `Projetos cadastrados em ${Store.getAno(ctx.anoId).ano}.`;
-  const projInicio = el('projInicio');
-  if(!el('projId').value && ctx.anoId && !projInicio.value){
-    projInicio.value = formatarValorInicio(Store.getAno(ctx.anoId), 1);
-  }
   preencherSelectMeses(el('projMesFim'));
 
   const tbody = document.querySelector('#tblProjetos tbody');

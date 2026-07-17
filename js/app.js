@@ -523,7 +523,7 @@ function preencherSelectMeses(select){
 function maskMesAno(input){
   let digitos = input.value.replace(/\D/g, '').slice(0, 6); // no máx. MMAAAA
   let saida = digitos;
-  if(digitos.length > 2) saida = digitos.slice(0,2) + '/' + digitos.slice(2);
+  if(digitos.length >= 2) saida = digitos.slice(0,2) + '/' + digitos.slice(2);
   input.value = saida;
 }
 

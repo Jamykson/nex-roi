@@ -20,6 +20,7 @@ function defaultData(){
   return {
     anos: [],
     colaboradores: [],
+    cargos: [],        // {id, nome, salario}
     projetos: [],
     alocacoes: [],     // {id, anoId, mes, colaboradorId, projetoId, percentual}
     ganhos: [],        // {id, anoId, projetoId|null, tipo, mesInicio, mesFim, descricao, valor}
@@ -133,6 +134,42 @@ const Store = {
   setAnoAtivo(id){
     this.data.activeAnoId = id;
     this.save();
+  },
+
+  // ---------------- Cargos (catálogo de opções pra Colaboradores) ----------------
+  criarCargo(nome, salario){
+    nome = (nome||'').trim();
+    if(!nome) return { ok:false, msg:'Informe o nome do cargo.' };
+    if(this.data.cargos.some(c => c.nome.toLowerCase() === nome.toLowerCase())){
+      return { ok:false, msg:'Esse cargo já existe.' };
+    }
+    const novo = { id: uid(), nome, salario: parseFloat(salario) || 0 };
+    this.data.cargos.push(novo);
+    this.data.cargos.sort((a,b)=>a.nome.localeCompare(b.nome, 'pt-BR'));
+    this.save();
+    return { ok:true, cargo: novo };
+  },
+
+  salvarCargo({id, nome, salario}){
+    nome = (nome||'').trim();
+    salario = parseFloat(salario) || 0;
+    const c = this.data.cargos.find(x=>x.id===id);
+    if(c){ c.nome = nome; c.salario = salario; }
+    this.data.cargos.sort((a,b)=>a.nome.localeCompare(b.nome, 'pt-BR'));
+    this.save();
+  },
+
+  removerCargo(id){
+    this.data.cargos = this.data.cargos.filter(c=>c.id!==id);
+    this.save();
+  },
+
+  getCargo(id){ return this.data.cargos.find(c=>c.id===id); },
+
+  // Quantos colaboradores usam este cargo hoje (pelo nome, já que o colaborador
+  // guarda o nome do cargo copiado, não uma referência viva ao cadastro).
+  colaboradoresPorCargo(nomeCargo){
+    return this.data.colaboradores.filter(c => c.cargo === nomeCargo).length;
   },
 
   // ---------------- Colaboradores ----------------

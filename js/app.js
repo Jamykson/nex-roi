@@ -105,6 +105,7 @@ function renderPage(page){
     case 'dashboard': return renderDashboard();
     case 'anos': return renderAnos();
     case 'colaboradores': return renderColaboradores();
+    case 'cargos': return renderCargos();
     case 'projetos': return renderProjetos();
     case 'projeto-detalhe': return renderProjetoDetalhe();
     case 'colaborador-detalhe': return renderColaboradorDetalhe();
@@ -312,7 +313,28 @@ function renderAnos(){
 // ---------------------------------------------------------------------------
 // COLABORADORES (registro global de pessoas + salário)
 // ---------------------------------------------------------------------------
+// Preenche o <select> de Cargo (usado no form de Colaboradores) com os cargos
+// cadastrados. Se o colaborador já tem um cargo que não existe mais na lista
+// (foi removido/renomeado depois), preserva o valor antigo como opção extra,
+// pra não perder/esconder o dado dele.
+function preencherSelectCargos(select, valorAtual){
+  const cargos = [...Store.data.cargos].sort((a,b)=>a.nome.localeCompare(b.nome, 'pt-BR'));
+  if(cargos.length === 0){
+    select.innerHTML = `<option value="">Nenhum cargo cadastrado — crie um na aba "Cargos"</option>`;
+    return;
+  }
+  let opcoes = `<option value="">Selecione um cargo…</option>` + cargos.map(c=>
+    `<option value="${escapeHtml(c.nome)}" data-salario="${c.salario}">${escapeHtml(c.nome)} — ${formatCurrency(c.salario)}</option>`
+  ).join('');
+  if(valorAtual && !cargos.some(c=>c.nome===valorAtual)){
+    opcoes += `<option value="${escapeHtml(valorAtual)}" selected>${escapeHtml(valorAtual)} (cargo removido)</option>`;
+  }
+  select.innerHTML = opcoes;
+  if(valorAtual && cargos.some(c=>c.nome===valorAtual)) select.value = valorAtual;
+}
+
 function renderColaboradores(){
+  preencherSelectCargos(el('colabCargo'), el('colabId').value ? el('colabCargo').value : '');
   document.querySelector('#tblColaboradores tbody').innerHTML = Store.data.colaboradores.map(c=>`
     <tr>
       <td><button class="link-btn" data-action="abrir-colaborador" data-id="${c.id}">${escapeHtml(c.nome)}</button></td>
@@ -323,6 +345,33 @@ function renderColaboradores(){
         <button class="icon-btn danger" data-action="remover-colab" data-id="${c.id}">Remover</button>
       </td>
     </tr>`).join('') || `<tr><td colspan="4" class="empty-hint">Nenhum colaborador cadastrado ainda.</td></tr>`;
+}
+
+// ---------------------------------------------------------------------------
+// CARGOS (catálogo de cargos com salário-base)
+// ---------------------------------------------------------------------------
+function renderCargos(){
+  const tbody = document.querySelector('#tblCargos tbody');
+  const emptyHint = el('cargosEmpty');
+  const cargos = [...Store.data.cargos].sort((a,b)=>a.nome.localeCompare(b.nome, 'pt-BR'));
+  if(cargos.length === 0){
+    tbody.innerHTML = '';
+    emptyHint.hidden = false;
+    return;
+  }
+  emptyHint.hidden = true;
+  tbody.innerHTML = cargos.map(c=>{
+    const qtd = Store.colaboradoresPorCargo(c.nome);
+    return `<tr>
+      <td>${escapeHtml(c.nome)}</td>
+      <td class="num">${formatCurrency(c.salario)}</td>
+      <td class="num muted">${qtd}</td>
+      <td class="row-actions">
+        <button class="icon-btn" data-action="editar-cargo" data-id="${c.id}">Editar</button>
+        <button class="icon-btn danger" data-action="remover-cargo" data-id="${c.id}">Remover</button>
+      </td>
+    </tr>`;
+  }).join('');
 }
 
 // ---------------------------------------------------------------------------
@@ -716,6 +765,12 @@ function resetFormGeral(){
   el('btnGeralCancel').hidden = true;
 }
 
+
+el('colabCargo').addEventListener('change', ()=>{
+  const opt = el('colabCargo').selectedOptions[0];
+  const salario = opt?.dataset.salario;
+  if(salario !== undefined) el('colabCusto').value = salario;
+});
 // ---------------------------------------------------------------------------
 // Eventos: Colaboradores
 // ---------------------------------------------------------------------------
@@ -753,7 +808,7 @@ document.querySelector('#page-colaboradores').addEventListener('click', e=>{
     const c = Store.data.colaboradores.find(x=>x.id===id);
     el('colabId').value = c.id;
     el('colabNome').value = c.nome;
-    el('colabCargo').value = c.cargo;
+    preencherSelectCargos(el('colabCargo'), c.cargo);
     el('colabCusto').value = c.custoMensal;
     el('btnColabSubmit').textContent = 'Salvar alterações';
     el('btnColabCancel').hidden = false;
@@ -764,6 +819,60 @@ document.querySelector('#page-colaboradores').addEventListener('click', e=>{
     Store.removerColaborador(id);
     toast('Colaborador removido.');
     renderColaboradores();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Eventos: Cargos
+// ---------------------------------------------------------------------------
+el('formCargo').addEventListener('submit', e=>{
+  e.preventDefault();
+  const idEditando = el('cargoId').value;
+  const nome = el('cargoNome').value.trim();
+  const salario = el('cargoSalario').value;
+  if(idEditando){
+    Store.salvarCargo({ id: idEditando, nome, salario });
+    toast('Cargo atualizado.');
+  }else{
+    const resultado = Store.criarCargo(nome, salario);
+    if(!resultado.ok){ toast(resultado.msg); return; }
+    toast('Cargo criado.');
+  }
+  resetFormCargo();
+  renderCargos();
+});
+
+el('btnCargoCancel').addEventListener('click', resetFormCargo);
+
+function resetFormCargo(){
+  el('cargoId').value = '';
+  el('formCargo').reset();
+  el('btnCargoSubmit').textContent = 'Adicionar cargo';
+  el('btnCargoCancel').hidden = true;
+}
+
+document.querySelector('#page-cargos').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-action]');
+  if(!btn) return;
+  const { action, id } = btn.dataset;
+  if(action==='editar-cargo'){
+    const c = Store.getCargo(id);
+    el('cargoId').value = c.id;
+    el('cargoNome').value = c.nome;
+    el('cargoSalario').value = c.salario;
+    el('btnCargoSubmit').textContent = 'Salvar alterações';
+    el('btnCargoCancel').hidden = false;
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  if(action==='remover-cargo'){
+    const qtd = Store.colaboradoresPorCargo(Store.getCargo(id)?.nome);
+    const aviso = qtd > 0
+      ? `Remover este cargo? ${qtd} colaborador(es) usam ele hoje — eles mantêm o cargo atual, só sai da lista de opções pra novos cadastros.`
+      : 'Remover este cargo?';
+    if(!confirm(aviso)) return;
+    Store.removerCargo(id);
+    toast('Cargo removido.');
+    renderCargos();
   }
 });
 

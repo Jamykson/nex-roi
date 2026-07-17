@@ -347,8 +347,9 @@ function renderProjetos(){
     ? 'Selecione um ano no formulário abaixo para começar.'
     : `Projetos cadastrados em ${Store.getAno(ctx.anoId).ano}.`;
   const projInicio = el('projInicio');
-  const valorInicioAtual = el('projId').value ? projInicio.value : (ctx.anoId ? `${ctx.anoId}::1` : '');
-  preencherSelectInicio(projInicio, valorInicioAtual);
+  if(!el('projId').value && ctx.anoId && !projInicio.value){
+    projInicio.value = formatarValorInicio(Store.getAno(ctx.anoId), 1);
+  }
   preencherSelectMeses(el('projMesFim'));
 
   const tbody = document.querySelector('#tblProjetos tbody');
@@ -516,15 +517,32 @@ function preencherSelectMeses(select){
   select.innerHTML = MESES_LONGO.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
 }
 
-// Select combinado de "mês + ano de início" de um projeto.
-// Cada opção já mostra o mês e o ano juntos (ex.: "Janeiro de 2026"),
-// e o value guarda os dois dados juntos no formato "anoId::mes".
-function preencherSelectInicio(select, valorAtual){
-  const anos = [...Store.data.anos].sort((a,b)=>a.ano-b.ano);
-  select.innerHTML = anos.flatMap(a=>
-    MESES_LONGO.map((m,i)=>`<option value="${a.id}::${i+1}">${m} de ${a.ano}</option>`)
-  ).join('');
-  if(valorAtual) select.value = valorAtual;
+// Campo de texto "mês/ano de início" de um projeto (ex.: "05/2022").
+// Em vez de um <select>, o usuário digita só números e o campo se
+// auto-formata como mm/aaaa conforme ele digita.
+function maskMesAno(input){
+  let digitos = input.value.replace(/\D/g, '').slice(0, 6); // no máx. MMAAAA
+  let saida = digitos;
+  if(digitos.length > 2) saida = digitos.slice(0,2) + '/' + digitos.slice(2);
+  input.value = saida;
+}
+
+// Monta o texto "mm/aaaa" a partir de um ano cadastrado (objeto) + número do mês.
+function formatarValorInicio(anoObj, mes){
+  if(!anoObj || !mes) return '';
+  return `${String(mes).padStart(2,'0')}/${anoObj.ano}`;
+}
+
+// Lê o texto "mm/aaaa" digitado e devolve { mes, ano } válidos, ou null se
+// o texto ainda estiver incompleto/errado.
+function parseValorInicio(texto){
+  const m = (texto || '').match(/^(\d{2})\/(\d{4})$/);
+  if(!m) return null;
+  const mes = parseInt(m[1], 10);
+  const ano = parseInt(m[2], 10);
+  if(mes < 1 || mes > 12) return null;
+  if(ano < 1900 || ano > 2999) return null;
+  return { mes, ano };
 }
 
 // ---------------------------------------------------------------------------
@@ -753,11 +771,19 @@ function syncProjMesFim(){
 el('projEmAndamento').addEventListener('change', syncProjMesFim);
 syncProjMesFim();
 
+el('projInicio').addEventListener('input', () => maskMesAno(el('projInicio')));
+
 el('formProjeto').addEventListener('submit', e=>{
   e.preventDefault();
-  const [anoIdSelecionado, mesInicioSelecionado] = el('projInicio').value.split('::');
-  const anoObj = Store.getAno(anoIdSelecionado);
-  if(!anoObj){ toast('Selecione o mês/ano de início do projeto.'); return; }
+  const inicioDigitado = parseValorInicio(el('projInicio').value);
+  if(!inicioDigitado){ toast('Digite o início do projeto no formato mm/aaaa (ex.: 05/2022).'); return; }
+  let anoObj = Store.getAnoPorNumero(inicioDigitado.ano);
+  if(!anoObj){
+    const resultado = Store.criarAno(inicioDigitado.ano);
+    anoObj = resultado.ok ? resultado.ano : Store.getAnoPorNumero(inicioDigitado.ano);
+  }
+  if(!anoObj){ toast('Não foi possível registrar esse ano.'); return; }
+  const mesInicioSelecionado = inicioDigitado.mes;
 
   const idEditando = el('projId').value;
   const nomeDigitado = el('projNome').value.trim();
@@ -821,7 +847,7 @@ document.querySelector('#page-projetos').addEventListener('click', e=>{
     const p = Store.getProjeto(id);
     el('projId').value = p.id;
     el('projNome').value = p.nome;
-    preencherSelectInicio(el('projInicio'), `${p.anoId}::${p.mesInicio || 1}`);
+    el('projInicio').value = formatarValorInicio(Store.getAno(p.anoId), p.mesInicio || 1);
     el('projTipo').value = p.tipo || 'impacto';
     el('projEmAndamento').checked = p.emAndamento !== false;
     el('projMesFim').value = p.mesFim || 12;

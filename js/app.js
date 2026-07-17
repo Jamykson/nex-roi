@@ -16,6 +16,7 @@ const ctx = {
 
 let projetoDetalheId = null; // projeto aberto na página de detalhe
 let colaboradorDetalheId = null; // colaborador aberto na página de detalhe
+let projetosGruposAbertos = new Set(); // ids (do projeto mais antigo da cadeia) que estão expandidos na lista de Projetos
 let chartEvolucao = null;
 
 // ---------------------------------------------------------------------------
@@ -404,6 +405,34 @@ function metricaProjeto(fn, projeto){
   return fn.call(Store, projeto.anoId, ctx.mes, projeto.id);
 }
 
+// Agrupa Store.data.projetos em "cadeias": cada cadeia é um array com todas as
+// edições anuais de um mesmo projeto, na ordem em que foram renovadas
+// (ex.: [Clube da Leitura/2022, Clube da Leitura/2023, ... /2026]).
+// Usa o vínculo renovadoDeId/renovadoParaId que já existe (criado pelo botão
+// "Renovar projeto"), em vez de agrupar só pelo nome.
+function projetosAgrupados(){
+  const porId = new Map(Store.data.projetos.map(p=>[p.id, p]));
+  const visitados = new Set();
+  const grupos = [];
+  Store.data.projetos.forEach(p=>{
+    if(visitados.has(p.id)) return;
+    let raiz = p;
+    while(raiz.renovadoDeId && porId.has(raiz.renovadoDeId)){
+      raiz = porId.get(raiz.renovadoDeId);
+    }
+    if(visitados.has(raiz.id)) return;
+    const cadeia = [];
+    let atual = raiz;
+    while(atual){
+      cadeia.push(atual);
+      visitados.add(atual.id);
+      atual = atual.renovadoParaId ? porId.get(atual.renovadoParaId) : null;
+    }
+    grupos.push(cadeia);
+  });
+  return grupos;
+}
+
 function renderProjetos(){
   el('projetosSubtitle').textContent = 'Todos os projetos cadastrados, de todos os anos.';
   if(!el('projId').value){
@@ -413,42 +442,80 @@ function renderProjetos(){
 
   const tbody = document.querySelector('#tblProjetos tbody');
   const emptyHint = el('projetosEmpty');
-  const projetos = [...Store.data.projetos].sort((a,b)=>{
-    const anoA = Store.getAno(a.anoId)?.ano || 0;
-    const anoB = Store.getAno(b.anoId)?.ano || 0;
+
+  const grupos = projetosAgrupados().sort((a,b)=>{
+    const anoA = Store.getAno(a[0].anoId)?.ano || 0;
+    const anoB = Store.getAno(b[0].anoId)?.ano || 0;
     if(anoA !== anoB) return anoA - anoB;
-    return (a.mesInicio||1) - (b.mesInicio||1);
+    return (a[0].mesInicio||1) - (b[0].mesInicio||1);
   });
-  if(projetos.length===0){
+
+  if(grupos.length===0){
     tbody.innerHTML = '';
     emptyHint.hidden = false;
     emptyHint.textContent = 'Nenhum projeto cadastrado ainda. Use o formulário acima para criar o primeiro.';
     return;
   }
   emptyHint.hidden = true;
-  tbody.innerHTML = projetos.map(p=>{
-    const anoObj = Store.getAno(p.anoId);
-    const membros = mes => Store.colaboradoresNoMes(p.anoId, mes, p.id).totalColaboradores;
-    const numMembros = ctx.mes==='ano' ? membros(new Date().getMonth()+1) : membros(ctx.mes);
-    const gasto = metricaProjeto(Store.gastoTotal, p);
-    const ganho = metricaProjeto(Store.ganho, p);
-    const saldo = ganho - gasto;
-    return `<tr>
-      <td><span class="color-dot" style="background:${p.cor}"></span></td>
-      <td><button class="link-btn" data-action="abrir-projeto" data-id="${p.id}">${escapeHtml(p.nome)}</button></td>
-      <td class="mono small">${anoObj ? anoObj.ano : '—'}</td>
-      <td>${tipoProjetoBadge(p)}</td>
-      <td class="mono small">${periodoProjetoLabel(p)} ${p.emAndamento?'<span class="badge mensal">em andamento</span>':''}</td>
-      <td class="num">${numMembros}</td>
-      <td class="num loss-text">${formatCurrency(gasto)}</td>
-      <td class="num gain-text">${formatCurrency(ganho)}</td>
-      <td class="num" style="color:${saldo>=0?'var(--gain)':'var(--loss)'}">${formatCurrency(saldo)}</td>
-      <td class="row-actions">
-        <button class="icon-btn" data-action="editar-proj" data-id="${p.id}">Editar</button>
-        <button class="icon-btn danger" data-action="remover-proj" data-id="${p.id}">Remover</button>
-      </td>
+
+  tbody.innerHTML = grupos.map(cadeia=>{
+    // projeto "avulso" (nunca foi renovado) — mostra como sempre, sem agrupamento
+    if(cadeia.length === 1) return linhaProjeto(cadeia[0], false);
+
+    const primeiro = cadeia[0];
+    const grupoId = primeiro.id; // chave estável: id do projeto mais antigo da cadeia
+    const aberto = projetosGruposAbertos.has(grupoId);
+    const anos = cadeia.map(p => Store.getAno(p.anoId)?.ano).filter(Boolean);
+
+    let gastoTotal = 0, ganhoTotal = 0;
+    cadeia.forEach(p=>{
+      gastoTotal += Store.agregarAno(p.anoId, p.id, Store.gastoTotal);
+      ganhoTotal += Store.agregarAno(p.anoId, p.id, Store.ganho);
+    });
+    const saldoTotal = ganhoTotal - gastoTotal;
+
+    const linhaGrupo = `<tr class="grupo-row" data-action="toggle-grupo-projeto" data-grupo="${grupoId}">
+      <td><span class="color-dot" style="background:${primeiro.cor}"></span></td>
+      <td><span class="chevron ${aberto?'open':''}">▸</span><strong>${escapeHtml(primeiro.nome)}</strong></td>
+      <td class="mono small">${anos[0]}–${anos[anos.length-1]}</td>
+      <td>${tipoProjetoBadge(primeiro)}</td>
+      <td class="mono small muted">${cadeia.length} anos cadastrados — clique pra ${aberto?'fechar':'ver'}</td>
+      <td class="num muted">—</td>
+      <td class="num loss-text">${formatCurrency(gastoTotal)}</td>
+      <td class="num gain-text">${formatCurrency(ganhoTotal)}</td>
+      <td class="num" style="color:${saldoTotal>=0?'var(--gain)':'var(--loss)'}">${formatCurrency(saldoTotal)}</td>
+      <td></td>
     </tr>`;
+
+    const linhasAnos = aberto ? cadeia.map(p => linhaProjeto(p, true)).join('') : '';
+    return linhaGrupo + linhasAnos;
   }).join('');
+}
+
+// Uma linha "normal" da tabela, representando UM projeto (uma edição/ano).
+// indentado=true quando está dentro de um grupo expandido (visual recuado).
+function linhaProjeto(p, indentado){
+  const anoObj = Store.getAno(p.anoId);
+  const membros = mes => Store.colaboradoresNoMes(p.anoId, mes, p.id).totalColaboradores;
+  const numMembros = ctx.mes==='ano' ? membros(new Date().getMonth()+1) : membros(ctx.mes);
+  const gasto = metricaProjeto(Store.gastoTotal, p);
+  const ganho = metricaProjeto(Store.ganho, p);
+  const saldo = ganho - gasto;
+  return `<tr class="${indentado?'sub-row':''}">
+    <td>${indentado?'':`<span class="color-dot" style="background:${p.cor}"></span>`}</td>
+    <td><button class="link-btn" data-action="abrir-projeto" data-id="${p.id}">${escapeHtml(p.nome)}</button></td>
+    <td class="mono small">${anoObj ? anoObj.ano : '—'}</td>
+    <td>${tipoProjetoBadge(p)}</td>
+    <td class="mono small">${periodoProjetoLabel(p)} ${p.emAndamento?'<span class="badge mensal">em andamento</span>':''}</td>
+    <td class="num">${numMembros}</td>
+    <td class="num loss-text">${formatCurrency(gasto)}</td>
+    <td class="num gain-text">${formatCurrency(ganho)}</td>
+    <td class="num" style="color:${saldo>=0?'var(--gain)':'var(--loss)'}">${formatCurrency(saldo)}</td>
+    <td class="row-actions">
+      <button class="icon-btn" data-action="editar-proj" data-id="${p.id}">Editar</button>
+      <button class="icon-btn danger" data-action="remover-proj" data-id="${p.id}">Remover</button>
+    </td>
+  </tr>`;
 }
 // ---------------------------------------------------------------------------
 // PROJETO — DETALHE (membros + ganhos + gastos extras deste projeto)
@@ -1060,6 +1127,14 @@ function resetFormProjeto(){
 }
 
 document.querySelector('#page-projetos').addEventListener('click', e=>{
+  const linhaGrupo = e.target.closest('tr[data-action="toggle-grupo-projeto"]');
+  if(linhaGrupo){
+    const grupoId = linhaGrupo.dataset.grupo;
+    if(projetosGruposAbertos.has(grupoId)) projetosGruposAbertos.delete(grupoId);
+    else projetosGruposAbertos.add(grupoId);
+    renderProjetos();
+    return;
+  }
   const btn = e.target.closest('button[data-action]');
   if(!btn) return;
   const { action, id } = btn.dataset;

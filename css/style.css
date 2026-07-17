@@ -339,6 +339,13 @@ button:disabled:hover{ background:inherit; }
 .empty-hint{color:var(--ink-faint); font-size:13px; padding:8px 2px 0;}
 .color-dot{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px;}
 
+.data-table tr.grupo-row{cursor:pointer;}
+.data-table tr.grupo-row:hover{background:var(--surface-alt);}
+.chevron{display:inline-block; margin-right:6px; font-size:11px; color:var(--ink-faint); transition:transform .15s ease;}
+.chevron.open{transform:rotate(90deg);}
+.data-table tr.sub-row td{background:var(--surface-alt);}
+.data-table tr.sub-row td:nth-child(2){padding-left:26px;}
+
 /* Matriz de alocação */
 .matrix-table th, .matrix-table td{text-align:center;}
 .matrix-table th:first-child, .matrix-table td:first-child{text-align:left; position:sticky; left:0; background:var(--surface); z-index:1;}

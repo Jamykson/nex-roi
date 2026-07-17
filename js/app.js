@@ -940,7 +940,7 @@ el('colabCargo').addEventListener('change', ()=>{
 el('colabEntrada').addEventListener('input', () => maskMesAno(el('colabEntrada')));
 el('colabSaida').addEventListener('input', () => maskMesAno(el('colabSaida')));
 function syncColabSaida(){
-  el('wrapColabSaida').hidden = el('colabAtivo').checked;
+  el('wrapColabSaida').style.display = el('colabAtivo').checked ? 'none' : '';
 }
 el('colabAtivo').addEventListener('change', syncColabSaida);
 syncColabSaida();

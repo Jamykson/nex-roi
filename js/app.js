@@ -608,6 +608,14 @@ function renderColaboradorDetalhe(){
 
   el('colabDetNome').textContent = colab.nome;
   el('colabDetSubtitle').textContent = `${colab.cargo} · Custo mensal integral: ${formatCurrency(colab.custoMensal)}`;
+
+  const anos = [...Store.data.anos].sort((a,b)=>a.ano-b.ano);
+  const selAno = el('colabAno');
+  selAno.innerHTML = anos.length
+    ? anos.map(a=>`<option value="${a.id}">${a.ano}</option>`).join('')
+    : `<option value="">Nenhum ano cadastrado</option>`;
+  if(ctx.anoId) selAno.value = ctx.anoId;
+
   el('colabMeses').innerHTML = mesTabsHtml(ctx.mes);
 
   const info = el('colabProjetosInfo');
@@ -695,6 +703,12 @@ el('ctxProjeto').addEventListener('change', e=>{
 });
 
 el('btnVoltarProjetos').addEventListener('click', ()=>{ setPage('projetos'); });
+
+el('colabAno').addEventListener('change', e=>{
+  ctx.anoId = e.target.value || null;
+  Store.setAnoAtivo(ctx.anoId);
+  rerenderCurrent();
+});
 
 // ---------------------------------------------------------------------------
 // Eventos: Anos + Ganhos gerais

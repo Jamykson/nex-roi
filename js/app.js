@@ -287,15 +287,22 @@ function renderChartEvolucao(){
   // passados mostram os 12 meses normalmente.
   const ultimoMes = anoObj.ano < anoReal ? 12 : (anoObj.ano === anoReal ? mesRealAtual : 0);
   const gastos = [], ganhos = [];
-  for(let m=1;m<=ultimoMes;m++){
-    gastos.push(Store.gastoTotal(ctx.anoId, m, filtro));
-    ganhos.push(Store.ganho(ctx.anoId, m, filtro));
+  for(let m=1;m<=12;m++){
+    if(m <= ultimoMes){
+      gastos.push(Store.gastoTotal(ctx.anoId, m, filtro));
+      ganhos.push(Store.ganho(ctx.anoId, m, filtro));
+    }else{
+      // mês ainda não chegou: fica sem barra (null), mas o nome do mês
+      // continua aparecendo no eixo, já que os 12 meses do ano existem.
+      gastos.push(null);
+      ganhos.push(null);
+    }
   }
   if(chartEvolucao) chartEvolucao.destroy();
   chartEvolucao = new Chart(canvas, {
     type: 'bar',
     data: {
-      labels: MESES.slice(0, ultimoMes),
+      labels: MESES,
       datasets: [
         { label:'Gasto', data:gastos, backgroundColor:'#C2483C', borderRadius:4, maxBarThickness:26 },
         { label:'Ganho', data:ganhos, backgroundColor:'#0E7C6B', borderRadius:4, maxBarThickness:26 }
@@ -306,7 +313,7 @@ function renderChartEvolucao(){
       maintainAspectRatio:false,
       plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{ family:'Work Sans', size:11 } } } },
       scales:{
-        y:{ ticks:{ callback:v=>'R$ '+v.toLocaleString('pt-BR'), font:{ family:'IBM Plex Mono', size:10 } }, grid:{ color:'#EDF0F5' } },
+        y:{ min:0, suggestedMax:100, ticks:{ callback:v=>'R$ '+v.toLocaleString('pt-BR'), font:{ family:'IBM Plex Mono', size:10 } }, grid:{ color:'#EDF0F5' } },
         x:{ ticks:{ font:{ family:'IBM Plex Mono', size:11 } }, grid:{ display:false } }
       }
     }

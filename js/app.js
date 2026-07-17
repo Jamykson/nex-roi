@@ -339,23 +339,18 @@ function renderColaboradores(){
   document.querySelector('#tblColaboradores tbody').innerHTML = Store.data.colaboradores.map(c=>{
     const anoEntrada = c.entradaAnoId ? Store.getAno(c.entradaAnoId) : null;
     const entradaTxt = anoEntrada ? formatarValorInicio(anoEntrada, c.entradaMes) : '<span class="muted">—</span>';
-    const anoSaida = c.saidaAnoId ? Store.getAno(c.saidaAnoId) : null;
-    const saidaTxt = anoSaida
-      ? `${formatarValorInicio(anoSaida, c.saidaMes)} <span class="badge inativo">Inativo</span>`
-      : '<span class="muted">—</span>';
     return `
     <tr>
       <td><button class="link-btn" data-action="abrir-colaborador" data-id="${c.id}">${escapeHtml(c.nome)}</button></td>
       <td class="muted">${escapeHtml(c.cargo)}</td>
       <td class="mono small">${entradaTxt}</td>
-      <td class="mono small">${saidaTxt}</td>
       <td class="num">${formatCurrency(c.custoMensal)}</td>
       <td class="row-actions">
         <button class="icon-btn" data-action="editar-colab" data-id="${c.id}">Editar</button>
         <button class="icon-btn danger" data-action="remover-colab" data-id="${c.id}">Remover</button>
       </td>
     </tr>`;
-  }).join('') || `<tr><td colspan="6" class="empty-hint">Nenhum colaborador cadastrado ainda.</td></tr>`;
+  }).join('') || `<tr><td colspan="5" class="empty-hint">Nenhum colaborador cadastrado ainda.</td></tr>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -595,9 +590,9 @@ function renderMembrosProjeto(projeto){
 
 
   const anoDoProjeto = Store.getAno(ctx.anoId);
-  // Só oferece colaboradores que já tinham entrado (e ainda não tinham saído)
-  // da empresa até este (ano, mês).
-  const colaboradores = Store.data.colaboradores.filter(c => Store.colaboradorAtivoEm(c, anoDoProjeto.ano, ctx.mes));
+  // Só oferece colaboradores que já tinham entrado na empresa até este
+  // (ano, mês) — quem entra depois não pode ser alocado em meses anteriores.
+  const colaboradores = Store.data.colaboradores.filter(c => Store.colaboradorJaEntrou(c, anoDoProjeto.ano, ctx.mes));
   if(colaboradores.length===0){
     tbody.innerHTML = '';
     emptyHint.hidden = false;
@@ -746,16 +741,11 @@ function renderColaboradorDetalhe(){
   const totalClass = total===100 ? 'total-ok' : (total===0 ? '' : 'total-bad');
   info.innerHTML = `Envolvimento de <strong>${escapeHtml(colab.nome)}</strong> em cada projeto de ${anoObj.ano} durante ${MESES_LONGO[ctx.mes-1]}. Total alocado no mês: <span class="total-cell ${totalClass}" id="colabTotalMes">${total}%</span>.`;
 
-  if(!Store.colaboradorAtivoEm(colab, anoObj.ano, ctx.mes)){
+  if(!Store.colaboradorJaEntrou(colab, anoObj.ano, ctx.mes)){
     tbody.innerHTML = '';
     emptyHint.hidden = false;
-    if(!Store.colaboradorJaEntrou(colab, anoObj.ano, ctx.mes)){
-      const entradaTxt = formatarValorInicio(Store.getAno(colab.entradaAnoId), colab.entradaMes);
-      emptyHint.textContent = `${colab.nome} ainda não tinha entrado (entrada: ${entradaTxt}).`;
-    }else{
-      const saidaTxt = formatarValorInicio(Store.getAno(colab.saidaAnoId), colab.saidaMes);
-      emptyHint.textContent = `${colab.nome} já tinha saído (saída: ${saidaTxt}).`;
-    }
+    const entradaTxt = formatarValorInicio(Store.getAno(colab.entradaAnoId), colab.entradaMes);
+    emptyHint.textContent = `${colab.nome} ainda não tinha entrado (entrada: ${entradaTxt}).`;
     return;
   }
 
@@ -936,16 +926,6 @@ el('colabCargo').addEventListener('change', ()=>{
   if(salario !== undefined) el('colabCusto').value = salario;
 });
 el('colabEntrada').addEventListener('input', () => maskMesAno(el('colabEntrada')));
-el('colabSaida').addEventListener('input', () => maskMesAno(el('colabSaida')));
-
-// Espelho de syncProjMesFim: o campo "Data de saída" só aparece quando o
-// colaborador NÃO está marcado como "Ativo".
-function syncColabSaida(){
-  el('wrapColabSaida').style.display = el('colabAtivo').checked ? 'none' : '';
-}
-el('colabAtivo').addEventListener('change', syncColabSaida);
-syncColabSaida();
-
 // ---------------------------------------------------------------------------
 // Eventos: Colaboradores
 // ---------------------------------------------------------------------------
@@ -969,31 +949,13 @@ el('formColaborador').addEventListener('submit', e=>{
     entradaMes = entradaDigitada.mes;
   }
 
-  // Data de saída só é lida (e exigida) quando "Ativo" está desmarcado.
-  let saidaAnoId = null, saidaMes = null;
-  if(!el('colabAtivo').checked){
-    const saidaTexto = el('colabSaida').value.trim();
-    const saidaDigitada = parseValorInicio(saidaTexto);
-    if(!saidaDigitada){ toast('Digite a data de saída no formato mm/aaaa (ex.: 11/2025), ou marque "Ativo".'); return; }
-    let anoSaidaObj = Store.getAnoPorNumero(saidaDigitada.ano);
-    if(!anoSaidaObj){
-      const resultado = Store.criarAno(saidaDigitada.ano);
-      anoSaidaObj = resultado.ok ? resultado.ano : Store.getAnoPorNumero(saidaDigitada.ano);
-    }
-    if(!anoSaidaObj){ toast('Não foi possível registrar esse ano.'); return; }
-    saidaAnoId = anoSaidaObj.id;
-    saidaMes = saidaDigitada.mes;
-  }
-
   Store.salvarColaborador({
     id: el('colabId').value || null,
     nome: el('colabNome').value.trim(),
     cargo: el('colabCargo').value.trim(),
     custoMensal: el('colabCusto').value,
     entradaAnoId,
-    entradaMes,
-    saidaAnoId,
-    saidaMes
+    entradaMes
   });
   toast('Colaborador salvo.');
   resetFormColaborador();
@@ -1005,8 +967,6 @@ el('btnColabCancel').addEventListener('click', resetFormColaborador);
 function resetFormColaborador(){
   el('colabId').value = '';
   el('formColaborador').reset();
-  el('colabAtivo').checked = true;
-  syncColabSaida();
   el('btnColabSubmit').textContent = 'Adicionar colaborador';
   el('btnColabCancel').hidden = true;
 }
@@ -1027,10 +987,6 @@ document.querySelector('#page-colaboradores').addEventListener('click', e=>{
     el('colabCusto').value = c.custoMensal;
     const anoEntradaAtual = c.entradaAnoId ? Store.getAno(c.entradaAnoId) : null;
     el('colabEntrada').value = anoEntradaAtual ? formatarValorInicio(anoEntradaAtual, c.entradaMes) : '';
-    const anoSaidaAtual = c.saidaAnoId ? Store.getAno(c.saidaAnoId) : null;
-    el('colabAtivo').checked = !anoSaidaAtual;
-    el('colabSaida').value = anoSaidaAtual ? formatarValorInicio(anoSaidaAtual, c.saidaMes) : '';
-    syncColabSaida();
     el('btnColabSubmit').textContent = 'Salvar alterações';
     el('btnColabCancel').hidden = false;
     window.scrollTo({top:0, behavior:'smooth'});

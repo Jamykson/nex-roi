@@ -522,7 +522,10 @@ function renderMembrosProjeto(projeto){
   info.textContent = `Percentual de envolvimento de cada colaborador em "${projeto.nome}" durante ${MESES_LONGO[ctx.mes-1]}.`;
 
 
-  const colaboradores = Store.data.colaboradores;
+  const anoDoProjeto = Store.getAno(ctx.anoId);
+  // Só oferece colaboradores que já tinham entrado na empresa até este
+  // (ano, mês) — quem entra depois não pode ser alocado em meses anteriores.
+  const colaboradores = Store.data.colaboradores.filter(c => Store.colaboradorJaEntrou(c, anoDoProjeto.ano, ctx.mes));
   if(colaboradores.length===0){
     tbody.innerHTML = '';
     emptyHint.hidden = false;
@@ -670,6 +673,14 @@ function renderColaboradorDetalhe(){
   const total = Store.totalAlocadoColaborador(ctx.anoId, ctx.mes, colab.id);
   const totalClass = total===100 ? 'total-ok' : (total===0 ? '' : 'total-bad');
   info.innerHTML = `Envolvimento de <strong>${escapeHtml(colab.nome)}</strong> em cada projeto de ${anoObj.ano} durante ${MESES_LONGO[ctx.mes-1]}. Total alocado no mês: <span class="total-cell ${totalClass}" id="colabTotalMes">${total}%</span>.`;
+
+  if(!Store.colaboradorJaEntrou(colab, anoObj.ano, ctx.mes)){
+    tbody.innerHTML = '';
+    emptyHint.hidden = false;
+    const entradaTxt = formatarValorInicio(Store.getAno(colab.entradaAnoId), colab.entradaMes);
+    emptyHint.textContent = `${colab.nome} ainda não tinha entrado (entrada: ${entradaTxt}).`;
+    return;
+  }
 
   const projetosDoAno = Store.projetosDoAno(ctx.anoId);
   if(projetosDoAno.length===0){
@@ -847,16 +858,37 @@ el('colabCargo').addEventListener('change', ()=>{
   const salario = opt?.dataset.salario;
   if(salario !== undefined) el('colabCusto').value = salario;
 });
+el('colabEntrada').addEventListener('input', () => maskMesAno(el('colabEntrada')));
 // ---------------------------------------------------------------------------
 // Eventos: Colaboradores
 // ---------------------------------------------------------------------------
 el('formColaborador').addEventListener('submit', e=>{
   e.preventDefault();
+
+  // Data de entrada é opcional. Se preenchida, precisa estar completa
+  // (mm/aaaa) e cria o ano automaticamente se ainda não existir.
+  const entradaTexto = el('colabEntrada').value.trim();
+  let entradaAnoId = null, entradaMes = null;
+  if(entradaTexto){
+    const entradaDigitada = parseValorInicio(entradaTexto);
+    if(!entradaDigitada){ toast('Digite a data de entrada no formato mm/aaaa (ex.: 05/2022), ou deixe em branco.'); return; }
+    let anoObj = Store.getAnoPorNumero(entradaDigitada.ano);
+    if(!anoObj){
+      const resultado = Store.criarAno(entradaDigitada.ano);
+      anoObj = resultado.ok ? resultado.ano : Store.getAnoPorNumero(entradaDigitada.ano);
+    }
+    if(!anoObj){ toast('Não foi possível registrar esse ano.'); return; }
+    entradaAnoId = anoObj.id;
+    entradaMes = entradaDigitada.mes;
+  }
+
   Store.salvarColaborador({
     id: el('colabId').value || null,
     nome: el('colabNome').value.trim(),
     cargo: el('colabCargo').value.trim(),
-    custoMensal: el('colabCusto').value
+    custoMensal: el('colabCusto').value,
+    entradaAnoId,
+    entradaMes
   });
   toast('Colaborador salvo.');
   resetFormColaborador();
@@ -886,6 +918,8 @@ document.querySelector('#page-colaboradores').addEventListener('click', e=>{
     el('colabNome').value = c.nome;
     preencherSelectCargos(el('colabCargo'), c.cargo);
     el('colabCusto').value = c.custoMensal;
+    const anoEntradaAtual = c.entradaAnoId ? Store.getAno(c.entradaAnoId) : null;
+    el('colabEntrada').value = anoEntradaAtual ? formatarValorInicio(anoEntradaAtual, c.entradaMes) : '';
     el('btnColabSubmit').textContent = 'Salvar alterações';
     el('btnColabCancel').hidden = false;
     window.scrollTo({top:0, behavior:'smooth'});

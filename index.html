@@ -109,7 +109,7 @@
           <h2>Gasto × Ganho por projeto</h2>
           <table class="data-table" id="tblProjetoResumo">
             <thead>
-              <tr><th>Projeto</th><th>Gasto</th><th>Ganho</th><th>Saldo</th></tr>
+              <tr><th>Projeto</th><th class="num">Gasto</th><th class="num">Ganho</th><th class="num">Saldo</th></tr>
             </thead>
             <tbody></tbody>
           </table>
@@ -125,7 +125,7 @@
         <h2>Colaboradores no período</h2>
         <table class="data-table" id="tblColabResumo">
           <thead>
-            <tr><th>Colaborador</th><th>Cargo</th><th>Projeto</th><th>% Alocação</th><th>Custo no projeto</th></tr>
+            <tr><th>Colaborador</th><th>Cargo</th><th>Projeto</th><th class="num">% Alocação</th><th class="num">Custo no projeto</th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -182,7 +182,7 @@
       </div>
       <div class="panel" id="panelGanhosGeraisLista">
         <table class="data-table" id="tblGanhosGerais">
-          <thead><tr><th>Descrição</th><th>Tipo</th><th>Período</th><th>Valor/mês</th><th></th></tr></thead>
+          <thead><tr><th>Descrição</th><th>Tipo</th><th>Período</th><th class="num">Valor/mês</th><th></th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -231,7 +231,7 @@
       </div>
       <div class="panel">
         <table class="data-table" id="tblColaboradores">
-          <thead><tr><th>Nome</th><th>Cargo</th><th>Entrada</th><th>Situação</th><th>Custo mensal</th><th></th></tr></thead>
+          <thead><tr><th>Nome</th><th>Cargo</th><th>Entrada</th><th>Situação</th><th class="num">Custo mensal</th><th></th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -262,7 +262,7 @@
       </div>
       <div class="panel">
         <table class="data-table" id="tblCargos">
-          <thead><tr><th>Cargo</th><th>Salário-base</th><th>Colaboradores</th><th></th></tr></thead>
+          <thead><tr><th>Cargo</th><th class="num">Salário-base</th><th class="num">Colaboradores</th><th></th></tr></thead>
           <tbody></tbody>
         </table>
         <p class="empty-hint" id="cargosEmpty" hidden>Nenhum cargo cadastrado ainda. Use o formulário acima para criar o primeiro.</p>
@@ -297,7 +297,7 @@
         <p class="muted small" id="colabProjetosInfo" style="margin-bottom:12px;"></p>
         <div class="table-scroll">
           <table class="data-table" id="tblProjetosColaborador">
-            <thead><tr><th>Projeto</th><th>Período (histórico)</th><th>% neste mês</th><th>Custo no projeto</th></tr></thead>
+            <thead><tr><th>Projeto</th><th>Período (histórico)</th><th>% neste mês</th><th class="num">Custo no projeto</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -347,7 +347,7 @@
       </div>
       <div class="panel">
         <table class="data-table" id="tblProjetos">
-        <thead><tr><th></th><th>Projeto</th><th>Ano</th><th>Tipo</th><th>Período</th><th>Membros no mês</th><th>Gasto</th><th>Ganho</th><th>Saldo</th><th></th></tr></thead>          <tbody></tbody>
+        <thead><tr><th></th><th>Projeto</th><th>Ano</th><th>Tipo</th><th>Período</th><th class="num">Membros no mês</th><th class="num">Gasto</th><th class="num">Ganho</th><th class="num">Saldo</th><th></th></tr></thead>          <tbody></tbody>
         </table>
         <p class="empty-hint" id="projetosEmpty" hidden></p>
       </div>
@@ -397,7 +397,7 @@
         <p class="muted small" id="membrosInfo" style="margin-bottom:12px;"></p>
         <div class="table-scroll">
           <table class="data-table" id="tblMembrosProjeto">
-            <thead><tr><th>Colaborador</th><th>Cargo</th><th>% neste projeto</th><th>Custo no projeto</th><th>Total do colaborador no mês</th></tr></thead>
+            <thead><tr><th>Colaborador</th><th>Cargo</th><th>% neste projeto</th><th class="num">Custo no projeto</th><th class="num">Total do colaborador no mês</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -442,7 +442,7 @@
         </div>
         <div class="panel">
           <table class="data-table" id="tblGanhosProjeto">
-            <thead><tr><th>Descrição</th><th>Tipo</th><th>Período</th><th>Valor/mês</th><th></th></tr></thead>
+            <thead><tr><th>Descrição</th><th>Tipo</th><th>Período</th><th class="num">Valor/mês</th><th></th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -484,7 +484,7 @@
       </div>
       <div class="panel">
         <table class="data-table" id="tblGastosProjeto">
-          <thead><tr><th>Descrição</th><th>Tipo</th><th>Período</th><th>Valor/mês</th><th></th></tr></thead>
+          <thead><tr><th>Descrição</th><th>Tipo</th><th>Período</th><th class="num">Valor/mês</th><th></th></tr></thead>
           <tbody></tbody>
         </table>
       </div>

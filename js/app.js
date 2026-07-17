@@ -188,14 +188,7 @@ function renderDashboard(){
       emptyHint.textContent = 'Ninguém alocado neste período ainda. Abra um projeto e cadastre os membros envolvidos.';
     }else{
       emptyHint.hidden = true;
-      tbodyColab.innerHTML = linhas.map(l=>`
-        <tr>
-          <td>${escapeHtml(l.colaborador.nome)}</td>
-          <td class="muted">${escapeHtml(l.colaborador.cargo)}</td>
-          <td>${escapeHtml(l.projetoNome)}</td>
-          <td class="num">${l.percentualLabel}</td>
-          <td class="num">${formatCurrency(l.custo)}</td>
-        </tr>`).join('');
+      tbodyColab.innerHTML = renderColaboradoresAgrupados(linhas);
     }
   }
   el('kpiColab').textContent = semAno ? '0' : new Set(colaboradoresPeriodo(ctx.anoId, ctx.mes, filtro).map(l=>l.colaborador.id)).size;
@@ -210,6 +203,7 @@ function colaboradoresPeriodo(anoId, mes, projetoFiltro){
     return linhas.map(l=>({
       colaborador: l.colaborador,
       projetoNome: l.projeto ? l.projeto.nome : '—',
+      percentual: l.percentual,
       percentualLabel: l.percentual.toFixed(1).replace('.0','') + '%',
       custo: l.custo
     }));
@@ -228,9 +222,50 @@ function colaboradoresPeriodo(anoId, mes, projetoFiltro){
   return Object.values(acc).map(a=>({
     colaborador: a.colaborador,
     projetoNome: a.projeto ? a.projeto.nome : '—',
+    percentual: a.pctSoma / a.meses,
     percentualLabel: (a.pctSoma / a.meses).toFixed(1).replace('.0','') + '% méd.',
     custo: a.custo
   }));
+}
+
+// Agrupa as linhas (uma por colaborador+projeto) por colaborador, pra mostrar
+// o nome só uma vez (célula "mesclada" com rowspan) em vez de repetir a cada
+// projeto — e soma um subtotal quando a pessoa está em mais de um projeto.
+function renderColaboradoresAgrupados(linhas){
+  const grupos = [];
+  const indice = new Map();
+  linhas.forEach(l=>{
+    if(!indice.has(l.colaborador.id)){
+      indice.set(l.colaborador.id, grupos.length);
+      grupos.push({ colaborador: l.colaborador, itens: [] });
+    }
+    grupos[indice.get(l.colaborador.id)].itens.push(l);
+  });
+
+  return grupos.map(g=>{
+    const n = g.itens.length;
+    const linhasHtml = g.itens.map((l,i)=>{
+      const nomeCell = i===0
+        ? `<td rowspan="${n}"><button class="link-btn" data-action="abrir-colaborador" data-id="${g.colaborador.id}">${escapeHtml(g.colaborador.nome)}</button></td>`
+        : '';
+      const cargoCell = i===0 ? `<td class="muted" rowspan="${n}">${escapeHtml(g.colaborador.cargo)}</td>` : '';
+      return `<tr class="${i===0 ? 'grupo-colab-inicio' : ''}">
+        ${nomeCell}${cargoCell}
+        <td>${escapeHtml(l.projetoNome)}</td>
+        <td class="num">${l.percentualLabel}</td>
+        <td class="num">${formatCurrency(l.custo)}</td>
+      </tr>`;
+    }).join('');
+    if(n <= 1) return linhasHtml;
+    const totalPct = g.itens.reduce((s,l)=>s+l.percentual, 0);
+    const totalCusto = g.itens.reduce((s,l)=>s+l.custo, 0);
+    return linhasHtml + `<tr class="subtotal-colab">
+      <td colspan="2" class="muted small">Total de ${g.colaborador.nome.split(' ')[0]} (${n} projetos)</td>
+      <td></td>
+      <td class="num">${totalPct.toFixed(0)}%</td>
+      <td class="num">${formatCurrency(totalCusto)}</td>
+    </tr>`;
+  }).join('');
 }
 
 function renderChartEvolucao(){
@@ -257,6 +292,7 @@ function renderChartEvolucao(){
     },
     options: {
       responsive:true,
+      maintainAspectRatio:false,
       plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{ family:'Work Sans', size:11 } } } },
       scales:{
         y:{ ticks:{ callback:v=>'R$ '+v.toLocaleString('pt-BR'), font:{ family:'IBM Plex Mono', size:10 } }, grid:{ color:'#EDF0F5' } },

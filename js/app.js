@@ -136,6 +136,16 @@ function roiLabel(gasto, ganho){
   return `<span style="color:${cor}">${sinal}${roi.toFixed(1).replace('.0','')}%</span>`;
 }
 
+// Soma uma métrica de Janeiro até o mês selecionado (inclusive). Se "Ano
+// todo" estiver selecionado, é a mesma coisa que o total do ano completo.
+function acumuladoAteMes(fn, projetoFiltro){
+  if(!ctx.anoId) return 0;
+  if(ctx.mes === 'ano') return Store.agregarAno(ctx.anoId, projetoFiltro, fn);
+  let total = 0;
+  for(let m=1; m<=ctx.mes; m++) total += fn.call(Store, ctx.anoId, m, projetoFiltro);
+  return total;
+}
+
 function renderDashboard(){
   const semAno = !ctx.anoId;
   const filtro = projetoFiltroAtual();
@@ -151,6 +161,9 @@ function renderDashboard(){
   stampSaldo.classList.toggle('positivo', saldo>=0);
   stampSaldo.classList.toggle('negativo', saldo<0);
   el('kpiRoi').innerHTML = semAno ? '—' : roiLabel(gasto, ganho);
+  const gastoAcum = semAno ? 0 : acumuladoAteMes(Store.gastoTotal, filtro);
+  const ganhoAcum = semAno ? 0 : acumuladoAteMes(Store.ganho, filtro);
+  el('kpiRoiAcumulado').innerHTML = semAno ? '—' : roiLabel(gastoAcum, ganhoAcum);
 
   const anoObj = Store.getAno(ctx.anoId);
   const projTxt = filtro==='ALL' ? 'todos os projetos' : filtro==='GERAL' ? 'lançamentos gerais' : nomeProjeto(ctx.projetoId);
@@ -167,14 +180,19 @@ function renderDashboard(){
     const linhas = projetosDoAno.map(p=>({
       nome: p.nome, cor: p.cor,
       gasto: metrica(Store.gastoTotal, p.id),
-      ganho: metrica(Store.ganho, p.id)
+      ganho: metrica(Store.ganho, p.id),
+      gastoAcum: acumuladoAteMes(Store.gastoTotal, p.id),
+      ganhoAcum: acumuladoAteMes(Store.ganho, p.id)
     }));
     const geralGanho = metrica(Store.ganho, 'GERAL');
     const geralGasto = metrica(Store.gastoTotal, 'GERAL');
-    if(geralGanho || geralGasto) linhas.push({ nome:'Geral (sem projeto)', cor:'#98A2B3', gasto:geralGasto, ganho:geralGanho });
+    if(geralGanho || geralGasto) linhas.push({
+      nome:'Geral (sem projeto)', cor:'#98A2B3', gasto:geralGasto, ganho:geralGanho,
+      gastoAcum: acumuladoAteMes(Store.gastoTotal, 'GERAL'), ganhoAcum: acumuladoAteMes(Store.ganho, 'GERAL')
+    });
 
     if(linhas.length===0){
-      tbody.innerHTML = `<tr><td colspan="5" class="empty-hint">Cadastre um projeto na aba "Projetos".</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="empty-hint">Cadastre um projeto na aba "Projetos".</td></tr>`;
     }else{
       tbody.innerHTML = linhas.map(l=>{
         const s = l.ganho - l.gasto;
@@ -184,6 +202,7 @@ function renderDashboard(){
           <td class="num gain-text">${formatCurrency(l.ganho)}</td>
           <td class="num" style="color:${s>=0?'var(--gain)':'var(--loss)'}">${formatCurrency(s)}</td>
           <td class="num">${roiLabel(l.gasto, l.ganho)}</td>
+          <td class="num">${roiLabel(l.gastoAcum, l.ganhoAcum)}</td>
         </tr>`;
       }).join('');
     }

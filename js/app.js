@@ -122,6 +122,20 @@ function rerenderCurrent(){ renderPage(currentPage()); }
 // ---------------------------------------------------------------------------
 // DASHBOARD
 // ---------------------------------------------------------------------------
+// ROI = (Ganho - Gasto) / Gasto, em %. Sem gasto, a divisão não faz sentido
+// (não existe "retorno sobre um investimento de zero") — mostramos "—".
+function roiPercent(gasto, ganho){
+  if(!gasto) return null;
+  return ((ganho - gasto) / gasto) * 100;
+}
+function roiLabel(gasto, ganho){
+  const roi = roiPercent(gasto, ganho);
+  if(roi===null) return '<span class="muted">—</span>';
+  const cor = roi>=0 ? 'var(--gain)' : 'var(--loss)';
+  const sinal = roi>0 ? '+' : '';
+  return `<span style="color:${cor}">${sinal}${roi.toFixed(1).replace('.0','')}%</span>`;
+}
+
 function renderDashboard(){
   const semAno = !ctx.anoId;
   const filtro = projetoFiltroAtual();
@@ -136,6 +150,7 @@ function renderDashboard(){
   const stampSaldo = el('stampSaldo');
   stampSaldo.classList.toggle('positivo', saldo>=0);
   stampSaldo.classList.toggle('negativo', saldo<0);
+  el('kpiRoi').innerHTML = semAno ? '—' : roiLabel(gasto, ganho);
 
   const anoObj = Store.getAno(ctx.anoId);
   const projTxt = filtro==='ALL' ? 'todos os projetos' : filtro==='GERAL' ? 'lançamentos gerais' : nomeProjeto(ctx.projetoId);
@@ -146,7 +161,7 @@ function renderDashboard(){
   // Tabela por projeto
   const tbody = document.querySelector('#tblProjetoResumo tbody');
   if(semAno){
-    tbody.innerHTML = `<tr><td colspan="4" class="empty-hint">Nenhum ano selecionado.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-hint">Nenhum ano selecionado.</td></tr>`;
   }else{
     const projetosDoAno = Store.projetosDoAno(ctx.anoId);
     const linhas = projetosDoAno.map(p=>({
@@ -159,7 +174,7 @@ function renderDashboard(){
     if(geralGanho || geralGasto) linhas.push({ nome:'Geral (sem projeto)', cor:'#98A2B3', gasto:geralGasto, ganho:geralGanho });
 
     if(linhas.length===0){
-      tbody.innerHTML = `<tr><td colspan="4" class="empty-hint">Cadastre um projeto na aba "Projetos".</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="empty-hint">Cadastre um projeto na aba "Projetos".</td></tr>`;
     }else{
       tbody.innerHTML = linhas.map(l=>{
         const s = l.ganho - l.gasto;
@@ -168,6 +183,7 @@ function renderDashboard(){
           <td class="num loss-text">${formatCurrency(l.gasto)}</td>
           <td class="num gain-text">${formatCurrency(l.ganho)}</td>
           <td class="num" style="color:${s>=0?'var(--gain)':'var(--loss)'}">${formatCurrency(s)}</td>
+          <td class="num">${roiLabel(l.gasto, l.ganho)}</td>
         </tr>`;
       }).join('');
     }

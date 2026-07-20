@@ -828,6 +828,7 @@ function renderColaboradorDetalhe(){
     el('colabSalarioMesInfo').textContent = '';
     el('colabCargoMes').innerHTML = '';
     el('colabCargoMesInfo').textContent = '';
+    el('wrapColabCargoMesSalario').hidden = true;
     return;
   }
   if(ctx.mes === 'ano'){
@@ -838,6 +839,7 @@ function renderColaboradorDetalhe(){
     el('colabSalarioMesInfo').textContent = 'Selecione um mês específico para ajustar o salário dele.';
     el('colabCargoMes').innerHTML = '';
     el('colabCargoMesInfo').textContent = 'Selecione um mês específico para agendar uma mudança de cargo.';
+    el('wrapColabCargoMesSalario').hidden = true;
     return;
   }
 
@@ -855,12 +857,24 @@ function renderColaboradorDetalhe(){
 
   const mudancaCargo = Store.getMudancaCargo(colab.id, ctx.anoId, ctx.mes);
   const cargoEfetivo = Store.cargoEfetivo(colab.id, ctx.anoId, ctx.mes);
+  const salarioBaseEfetivo = Store.salarioBaseEfetivo(colab.id, ctx.anoId, ctx.mes);
   preencherSelectCargos(el('colabCargoMes'), mudancaCargo ? mudancaCargo.cargo : '');
   const optVazia = el('colabCargoMes').querySelector('option[value=""]');
-  if(optVazia && Store.data.cargos.length > 0) optVazia.textContent = `Não mudar (cargo atual: ${cargoEfetivo})`;
-  el('colabCargoMesInfo').textContent = mudancaCargo
-    ? `Cargo mudou para "${mudancaCargo.cargo}" a partir de ${MESES_LONGO[ctx.mes-1]} de ${anoObj.ano} (e continua valendo nos meses seguintes, até a próxima mudança).`
-    : `Cargo efetivo em ${MESES_LONGO[ctx.mes-1]}: ${cargoEfetivo}.`;
+  if(optVazia && Store.data.cargos.length > 0) optVazia.textContent = 'Manter cargo atual';
+
+  const wrapSalario = el('wrapColabCargoMesSalario');
+  const inputSalarioCargo = el('colabCargoMesSalario');
+  if(mudancaCargo){
+    wrapSalario.hidden = false;
+    inputSalarioCargo.value = (mudancaCargo.salario!==null && mudancaCargo.salario!==undefined) ? mudancaCargo.salario : '';
+  }else{
+    wrapSalario.hidden = true;
+    inputSalarioCargo.value = '';
+  }
+
+  el('colabCargoMesInfo').innerHTML = mudancaCargo
+    ? `Desde ${MESES_LONGO[ctx.mes-1]} de ${anoObj.ano}: <strong>${escapeHtml(mudancaCargo.cargo)}</strong>, ${formatCurrency(salarioBaseEfetivo)}/mês (continua nos meses seguintes, até a próxima mudança).`
+    : `Cargo e salário-base atuais: <strong>${escapeHtml(cargoEfetivo)}</strong>, ${formatCurrency(salarioBaseEfetivo)}/mês.`;
 
   if(!Store.colaboradorJaEntrou(colab, anoObj.ano, ctx.mes)){
     tbody.innerHTML = '';
@@ -1354,8 +1368,32 @@ el('colabSalarioMes').addEventListener('change', e=>{
 
 el('colabCargoMes').addEventListener('change', e=>{
   if(!ctx.anoId || ctx.mes==='ano') return;
-  Store.setMudancaCargo(colaboradorDetalheId, ctx.anoId, ctx.mes, e.target.value);
-  toast(e.target.value ? `Cargo muda para "${e.target.value}" a partir deste mês.` : 'Mudança de cargo removida deste mês.');
+  const cargoEscolhido = e.target.value;
+  const wrapSalario = el('wrapColabCargoMesSalario');
+  const inputSalario = el('colabCargoMesSalario');
+  if(!cargoEscolhido){
+    wrapSalario.hidden = true;
+    inputSalario.value = '';
+    Store.setMudancaCargo(colaboradorDetalheId, ctx.anoId, ctx.mes, '', '');
+    toast('Mudança de cargo removida deste mês.');
+    renderColaboradorDetalhe();
+    return;
+  }
+  const opt = e.target.selectedOptions[0];
+  const salarioSugerido = opt?.dataset.salario;
+  wrapSalario.hidden = false;
+  inputSalario.value = salarioSugerido !== undefined ? salarioSugerido : '';
+  Store.setMudancaCargo(colaboradorDetalheId, ctx.anoId, ctx.mes, cargoEscolhido, inputSalario.value);
+  toast(`Cargo muda para "${cargoEscolhido}" a partir deste mês.`);
+  renderColaboradorDetalhe();
+});
+
+el('colabCargoMesSalario').addEventListener('change', e=>{
+  if(!ctx.anoId || ctx.mes==='ano') return;
+  const cargoAtual = el('colabCargoMes').value;
+  if(!cargoAtual) return;
+  Store.setMudancaCargo(colaboradorDetalheId, ctx.anoId, ctx.mes, cargoAtual, e.target.value);
+  toast('Salário-base atualizado a partir deste mês.');
   renderColaboradorDetalhe();
 });
 

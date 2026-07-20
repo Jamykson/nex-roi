@@ -305,19 +305,25 @@
           </div>
         </div>
         <p class="muted small" id="colabProjetosInfo" style="margin-bottom:12px;"></p>
-        <div class="toolbar-row" style="gap:10px; align-items:flex-end; margin-bottom:16px; flex-wrap:wrap;">
-          <div class="field" style="min-width:220px;">
-            <label>Ajuste de salário neste mês</label>
-            <input type="number" id="colabSalarioMes" step="0.01" min="0" placeholder="Usar o padrão">
+        <div class="toolbar-row" style="gap:20px; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap;">
+          <div class="toolbar-row" style="gap:10px; align-items:flex-end; flex-wrap:wrap;">
+            <div class="field" style="min-width:200px;">
+              <label>Ajuste de salário só neste mês</label>
+              <input type="number" id="colabSalarioMes" step="0.01" min="0" placeholder="Usar o padrão">
+            </div>
+            <p class="muted small" id="colabSalarioMesInfo" style="margin-bottom:9px;"></p>
           </div>
-          <p class="muted small" id="colabSalarioMesInfo" style="margin-bottom:9px;"></p>
-        </div>
-        <div class="toolbar-row" style="gap:10px; align-items:flex-end; margin-bottom:16px; flex-wrap:wrap;">
-          <div class="field" style="min-width:220px;">
-            <label>Mudar cargo a partir deste mês</label>
-            <select id="colabCargoMes"></select>
+          <div class="toolbar-row" style="gap:10px; align-items:flex-end; flex-wrap:wrap;">
+            <div class="field" style="min-width:200px;">
+              <label>Cargo a partir deste mês</label>
+              <select id="colabCargoMes"></select>
+            </div>
+            <div class="field" id="wrapColabCargoMesSalario" style="min-width:170px;" hidden>
+              <label>Novo salário-base</label>
+              <input type="number" id="colabCargoMesSalario" step="0.01" min="0">
+            </div>
+            <p class="muted small" id="colabCargoMesInfo" style="margin-bottom:9px;"></p>
           </div>
-          <p class="muted small" id="colabCargoMesInfo" style="margin-bottom:9px;"></p>
         </div>
         <div class="table-scroll">
           <table class="data-table" id="tblProjetosColaborador">

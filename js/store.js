@@ -467,18 +467,21 @@ const Store = {
     this.save();
   },
 
-  // Quanto esse colaborador custa NESTE mês específico: o ajuste pontual,
-  // se existir, ou o custoMensal padrão dele.
+  // Quanto esse colaborador custa NESTE mês específico, na ordem de
+  // prioridade: ajuste pontual (só aquele mês) > salário-base efetivo
+  // (herdado da última mudança de cargo) > custoMensal padrão.
   custoMensalEfetivo(colaboradorId, anoId, mes){
     const colab = this.data.colaboradores.find(c=>c.id===colaboradorId);
     if(!colab) return 0;
     const ajuste = this.getSalarioPontual(colaboradorId, anoId, mes);
-    return ajuste ? ajuste.valor : colab.custoMensal;
+    if(ajuste) return ajuste.valor;
+    return this.salarioBaseEfetivo(colaboradorId, anoId, mes);
   },
 
   // Mudança de cargo: diferente do ajuste de salário (que vale só um mês),
   // uma mudança de cargo vale a PARTIR daquele (ano, mês) em diante, até
-  // que outra mudança futura (ou nenhuma) substitua ela.
+  // que outra mudança futura (ou nenhuma) substitua ela. Pode vir junto com
+  // um novo salário-base (também passa a valer a partir do mesmo mês).
   _chaveAnoMes(anoId, mes){
     const ano = this.getAno(anoId)?.ano || 0;
     return ano*12 + mes;
@@ -489,18 +492,33 @@ const Store = {
       m.colaboradorId===colaboradorId && m.anoId===anoId && m.mes===mes);
   },
 
-  setMudancaCargo(colaboradorId, anoId, mes, cargo){
+  setMudancaCargo(colaboradorId, anoId, mes, cargo, salario){
     const reg = this.getMudancaCargo(colaboradorId, anoId, mes);
     cargo = (cargo || '').trim();
+    salario = (salario==='' || salario===null || salario===undefined) ? null : parseFloat(salario);
+    if(salario!==null && isNaN(salario)) salario = null;
     if(!cargo){
       // vazio = remove a mudança agendada pra este mês específico
       if(reg) this.data.mudancasCargo = this.data.mudancasCargo.filter(m=>m!==reg);
     }else if(reg){
       reg.cargo = cargo;
+      reg.salario = salario;
     }else{
-      this.data.mudancasCargo.push({ id:uid(), colaboradorId, anoId, mes, cargo });
+      this.data.mudancasCargo.push({ id:uid(), colaboradorId, anoId, mes, cargo, salario });
     }
     this.save();
+  },
+
+  // Acha a mudança de cargo mais recente que já valia nesse (ano, mês) —
+  // usado tanto pra saber o cargo quanto o salário-base efetivo.
+  _mudancaCargoVigente(colaboradorId, anoId, mes){
+    const alvo = this._chaveAnoMes(anoId, mes);
+    const candidatas = this.data.mudancasCargo
+      .filter(m=>m.colaboradorId===colaboradorId)
+      .map(m=>({ ...m, chave: this._chaveAnoMes(m.anoId, m.mes) }))
+      .filter(m=>m.chave <= alvo)
+      .sort((a,b)=>b.chave-a.chave);
+    return candidatas[0] || null;
   },
 
   // Qual cargo vale nesse (ano, mês): a mudança agendada mais recente que já
@@ -509,13 +527,18 @@ const Store = {
   cargoEfetivo(colaboradorId, anoId, mes){
     const colab = this.data.colaboradores.find(c=>c.id===colaboradorId);
     if(!colab) return '';
-    const alvo = this._chaveAnoMes(anoId, mes);
-    const candidatas = this.data.mudancasCargo
-      .filter(m=>m.colaboradorId===colaboradorId)
-      .map(m=>({ ...m, chave: this._chaveAnoMes(m.anoId, m.mes) }))
-      .filter(m=>m.chave <= alvo)
-      .sort((a,b)=>b.chave-a.chave);
-    return candidatas.length ? candidatas[0].cargo : colab.cargo;
+    const vigente = this._mudancaCargoVigente(colaboradorId, anoId, mes);
+    return vigente ? vigente.cargo : colab.cargo;
+  },
+
+  // Salário-base "permanente" vigente nesse (ano, mês): o salário registrado
+  // junto da última mudança de cargo que já valia, ou o custoMensal padrão
+  // do colaborador, se nenhuma mudança trouxe salário novo.
+  salarioBaseEfetivo(colaboradorId, anoId, mes){
+    const colab = this.data.colaboradores.find(c=>c.id===colaboradorId);
+    if(!colab) return 0;
+    const vigente = this._mudancaCargoVigente(colaboradorId, anoId, mes);
+    return (vigente && vigente.salario!==null && vigente.salario!==undefined) ? vigente.salario : colab.custoMensal;
   },
 
   // custo de folha de um colaborador em um mês, opcionalmente restrito a um projeto

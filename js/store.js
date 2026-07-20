@@ -25,7 +25,7 @@ function defaultData(){
     alocacoes: [],     // {id, anoId, mes, colaboradorId, projetoId, percentual}
     salariosPontuais: [], // {id, colaboradorId, anoId, mes, valor} — sobrescreve custoMensal só naquele mês
     mudancasCargo: [],    // {id, colaboradorId, anoId, mes, cargo} — cargo passa a valer a PARTIR daquele mês
-    mudancasCargo: [],    // {id, colaboradorId, anoId, mes, cargo} — cargo passa a valer a PARTIR daquele mês    ganhos: [],        // {id, anoId, projetoId|null, tipo, mesInicio, mesFim, descricao, valor}
+    ganhos: [],        // {id, anoId, projetoId|null, tipo, mesInicio, mesFim, descricao, valor}
     gastosExtras: [],  // idem ganhos
     activeAnoId: null
   };

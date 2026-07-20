@@ -240,6 +240,7 @@ function colaboradoresPeriodo(anoId, mes, projetoFiltro){
       projetoNome: l.projeto ? l.projeto.nome : '—',
       percentual: l.percentual,
       percentualLabel: l.percentual.toFixed(1).replace('.0','') + '%',
+      cargoEfetivo: l.cargoEfetivo,
       custo: l.custo
     }));
   }
@@ -252,12 +253,14 @@ function colaboradoresPeriodo(anoId, mes, projetoFiltro){
       acc[key].custo += l.custo;
       acc[key].pctSoma += l.percentual;
       acc[key].meses += 1;
+      acc[key].cargoEfetivo = l.cargoEfetivo; // fica com o cargo do mês mais recente somado
     });
   }
   return Object.values(acc).map(a=>({
     colaborador: a.colaborador,
     projetoNome: a.projeto ? a.projeto.nome : '—',
     percentual: a.pctSoma / a.meses,
+    cargoEfetivo: a.cargoEfetivo,
     percentualLabel: (a.pctSoma / a.meses).toFixed(1).replace('.0','') + '% méd.',
     custo: a.custo
   }));
@@ -283,7 +286,7 @@ function renderColaboradoresAgrupados(linhas){
       const nomeCell = i===0
         ? `<td rowspan="${n}"><button class="link-btn" data-action="abrir-colaborador" data-id="${g.colaborador.id}">${escapeHtml(g.colaborador.nome)}</button></td>`
         : '';
-      const cargoCell = i===0 ? `<td class="muted" rowspan="${n}">${escapeHtml(g.colaborador.cargo)}</td>` : '';
+      const cargoCell = i===0 ? `<td class="muted" rowspan="${n}">${escapeHtml(l.cargoEfetivo || g.colaborador.cargo)}</td>` : '';
       return `<tr class="${i===0 ? 'grupo-colab-inicio' : ''}">
         ${nomeCell}${cargoCell}
         <td>${escapeHtml(l.projetoNome)}</td>
@@ -701,7 +704,7 @@ function renderMembrosProjeto(projeto){
     const totalClass = total===100 ? 'total-ok' : (total===0 ? '' : 'total-bad');
     return `<tr>
       <td>${escapeHtml(c.nome)}</td>
-      <td class="muted">${escapeHtml(c.cargo)}</td>
+      <td class="muted">${escapeHtml(Store.cargoEfetivo(c.id, ctx.anoId, ctx.mes))}</td>
       <td><input type="number" class="pct" min="0" max="100" step="1" value="${val}"
             data-colab="${c.id}" placeholder="0"></td>
       <td class="num">${formatCurrency(custo)}</td>
@@ -823,6 +826,8 @@ function renderColaboradorDetalhe(){
     emptyHint.hidden = true;
     el('colabSalarioMes').value = '';
     el('colabSalarioMesInfo').textContent = '';
+    el('colabCargoMes').innerHTML = '';
+    el('colabCargoMesInfo').textContent = '';
     return;
   }
   if(ctx.mes === 'ano'){
@@ -831,6 +836,8 @@ function renderColaboradorDetalhe(){
     emptyHint.hidden = true;
     el('colabSalarioMes').value = '';
     el('colabSalarioMesInfo').textContent = 'Selecione um mês específico para ajustar o salário dele.';
+    el('colabCargoMes').innerHTML = '';
+    el('colabCargoMesInfo').textContent = 'Selecione um mês específico para agendar uma mudança de cargo.';
     return;
   }
 
@@ -845,6 +852,15 @@ function renderColaboradorDetalhe(){
   el('colabSalarioMesInfo').textContent = ajuste
     ? `Valor diferente do padrão só em ${MESES_LONGO[ctx.mes-1]} de ${anoObj.ano}.`
     : '';
+
+  const mudancaCargo = Store.getMudancaCargo(colab.id, ctx.anoId, ctx.mes);
+  const cargoEfetivo = Store.cargoEfetivo(colab.id, ctx.anoId, ctx.mes);
+  preencherSelectCargos(el('colabCargoMes'), mudancaCargo ? mudancaCargo.cargo : '');
+  const optVazia = el('colabCargoMes').querySelector('option[value=""]');
+  if(optVazia && Store.data.cargos.length > 0) optVazia.textContent = `Não mudar (cargo atual: ${cargoEfetivo})`;
+  el('colabCargoMesInfo').textContent = mudancaCargo
+    ? `Cargo mudou para "${mudancaCargo.cargo}" a partir de ${MESES_LONGO[ctx.mes-1]} de ${anoObj.ano} (e continua valendo nos meses seguintes, até a próxima mudança).`
+    : `Cargo efetivo em ${MESES_LONGO[ctx.mes-1]}: ${cargoEfetivo}.`;
 
   if(!Store.colaboradorJaEntrou(colab, anoObj.ano, ctx.mes)){
     tbody.innerHTML = '';
@@ -1333,6 +1349,13 @@ el('colabSalarioMes').addEventListener('change', e=>{
   if(!ctx.anoId || ctx.mes==='ano') return;
   Store.setSalarioPontual(colaboradorDetalheId, ctx.anoId, ctx.mes, e.target.value);
   toast(e.target.value ? 'Ajuste de salário salvo para este mês.' : 'Voltou a usar o salário padrão neste mês.');
+  renderColaboradorDetalhe();
+});
+
+el('colabCargoMes').addEventListener('change', e=>{
+  if(!ctx.anoId || ctx.mes==='ano') return;
+  Store.setMudancaCargo(colaboradorDetalheId, ctx.anoId, ctx.mes, e.target.value);
+  toast(e.target.value ? `Cargo muda para "${e.target.value}" a partir deste mês.` : 'Mudança de cargo removida deste mês.');
   renderColaboradorDetalhe();
 });
 

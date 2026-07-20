@@ -24,7 +24,8 @@ function defaultData(){
     projetos: [],
     alocacoes: [],     // {id, anoId, mes, colaboradorId, projetoId, percentual}
     salariosPontuais: [], // {id, colaboradorId, anoId, mes, valor} — sobrescreve custoMensal só naquele mês
-    ganhos: [],        // {id, anoId, projetoId|null, tipo, mesInicio, mesFim, descricao, valor}
+    mudancasCargo: [],    // {id, colaboradorId, anoId, mes, cargo} — cargo passa a valer a PARTIR daquele mês
+    mudancasCargo: [],    // {id, colaboradorId, anoId, mes, cargo} — cargo passa a valer a PARTIR daquele mês    ganhos: [],        // {id, anoId, projetoId|null, tipo, mesInicio, mesFim, descricao, valor}
     gastosExtras: [],  // idem ganhos
     activeAnoId: null
   };
@@ -225,6 +226,7 @@ const Store = {
     this.data.colaboradores = this.data.colaboradores.filter(c=>c.id!==id);
     this.data.alocacoes = this.data.alocacoes.filter(a=>a.colaboradorId!==id);
     this.data.salariosPontuais = this.data.salariosPontuais.filter(s=>s.colaboradorId!==id);
+    this.data.mudancasCargo = this.data.mudancasCargo.filter(m=>m.colaboradorId!==id);
     this.save();
   },
 
@@ -474,6 +476,48 @@ const Store = {
     return ajuste ? ajuste.valor : colab.custoMensal;
   },
 
+  // Mudança de cargo: diferente do ajuste de salário (que vale só um mês),
+  // uma mudança de cargo vale a PARTIR daquele (ano, mês) em diante, até
+  // que outra mudança futura (ou nenhuma) substitua ela.
+  _chaveAnoMes(anoId, mes){
+    const ano = this.getAno(anoId)?.ano || 0;
+    return ano*12 + mes;
+  },
+
+  getMudancaCargo(colaboradorId, anoId, mes){
+    return this.data.mudancasCargo.find(m=>
+      m.colaboradorId===colaboradorId && m.anoId===anoId && m.mes===mes);
+  },
+
+  setMudancaCargo(colaboradorId, anoId, mes, cargo){
+    const reg = this.getMudancaCargo(colaboradorId, anoId, mes);
+    cargo = (cargo || '').trim();
+    if(!cargo){
+      // vazio = remove a mudança agendada pra este mês específico
+      if(reg) this.data.mudancasCargo = this.data.mudancasCargo.filter(m=>m!==reg);
+    }else if(reg){
+      reg.cargo = cargo;
+    }else{
+      this.data.mudancasCargo.push({ id:uid(), colaboradorId, anoId, mes, cargo });
+    }
+    this.save();
+  },
+
+  // Qual cargo vale nesse (ano, mês): a mudança agendada mais recente que já
+  // tenha "começado a valer" até esse ponto, ou o cargo cadastrado no
+  // colaborador (o padrão), se nenhuma mudança já valia.
+  cargoEfetivo(colaboradorId, anoId, mes){
+    const colab = this.data.colaboradores.find(c=>c.id===colaboradorId);
+    if(!colab) return '';
+    const alvo = this._chaveAnoMes(anoId, mes);
+    const candidatas = this.data.mudancasCargo
+      .filter(m=>m.colaboradorId===colaboradorId)
+      .map(m=>({ ...m, chave: this._chaveAnoMes(m.anoId, m.mes) }))
+      .filter(m=>m.chave <= alvo)
+      .sort((a,b)=>b.chave-a.chave);
+    return candidatas.length ? candidatas[0].cargo : colab.cargo;
+  },
+
   // custo de folha de um colaborador em um mês, opcionalmente restrito a um projeto
   custoFolhaColaborador(anoId, mes, colaboradorId, projetoFiltro){
     const colab = this.data.colaboradores.find(c=>c.id===colaboradorId);
@@ -527,6 +571,7 @@ const Store = {
         colaborador: colab,
         projeto: proj,
         percentual: a.percentual,
+        cargoEfetivo: this.cargoEfetivo(colab.id, anoId, mes),
         custo: this.custoMensalEfetivo(colab.id, anoId, mes) * (a.percentual/100)
       });
     });

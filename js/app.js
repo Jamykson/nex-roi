@@ -426,21 +426,36 @@ function preencherSelectCargos(select, valorAtual){
   if(valorAtual && cargos.some(c=>c.nome===valorAtual)) select.value = valorAtual;
 }
 
+// Acha o registro do "Ano" (2020..atual) que corresponde ao ano real de hoje,
+// junto com o número do mês real — usado pra mostrar cargo/salário "de hoje"
+// em telas que não têm um seletor de mês próprio (ex.: lista de Colaboradores).
+function anoMesRealHoje(){
+  const anoNum = new Date().getFullYear();
+  const mes = new Date().getMonth() + 1;
+  const anoObj = Store.getAnoPorNumero(anoNum);
+  return { anoObj, mes };
+}
+
 function renderColaboradores(){
   preencherSelectCargos(el('colabCargo'), el('colabId').value ? el('colabCargo').value : '');
+  const { anoObj: anoRealObj, mes: mesReal } = anoMesRealHoje();
   document.querySelector('#tblColaboradores tbody').innerHTML = Store.data.colaboradores.map(c=>{
     const anoEntrada = c.entradaAnoId ? Store.getAno(c.entradaAnoId) : null;
     const entradaTxt = anoEntrada ? formatarValorInicio(anoEntrada, c.entradaMes) : '<span class="muted">—</span>';
     const situacaoTxt = c.ativo === false
       ? (c.saidaAnoId ? `Saiu em ${formatarValorInicio(Store.getAno(c.saidaAnoId), c.saidaMes)}` : 'Inativo')
       : '<span class="badge mensal">Em atividade</span>';
+    // Cargo/custo "de hoje" (considerando mudanças já agendadas que já valem),
+    // não só o valor cadastrado originalmente no colaborador.
+    const cargoHoje = anoRealObj ? Store.cargoEfetivo(c.id, anoRealObj.id, mesReal) : c.cargo;
+    const custoHoje = anoRealObj ? Store.custoMensalEfetivo(c.id, anoRealObj.id, mesReal) : c.custoMensal;
     return `
     <tr>
       <td><button class="link-btn" data-action="abrir-colaborador" data-id="${c.id}">${escapeHtml(c.nome)}</button></td>
-      <td class="muted">${escapeHtml(c.cargo)}</td>
+      <td class="muted">${escapeHtml(cargoHoje)}</td>
       <td class="mono small">${entradaTxt}</td>
       <td class="mono small">${situacaoTxt}</td>
-      <td class="num">${formatCurrency(c.custoMensal)}</td>
+      <td class="num">${formatCurrency(custoHoje)}</td>
       <td class="row-actions">
         <button class="icon-btn" data-action="editar-colab" data-id="${c.id}">Editar</button>
         <button class="icon-btn danger" data-action="remover-colab" data-id="${c.id}">Remover</button>
@@ -805,8 +820,11 @@ function renderColaboradorDetalhe(){
   if(!colab){ setPage('colaboradores'); return; }
 
   el('colabDetNome').textContent = colab.nome;
-  el('colabDetSubtitle').textContent = `${colab.cargo} · Custo mensal integral: ${formatCurrency(colab.custoMensal)}`;
-
+  const { anoObj: anoRealObjSubt, mes: mesRealSubt } = anoMesRealHoje();
+  const cargoHojeSubt = anoRealObjSubt ? Store.cargoEfetivo(colab.id, anoRealObjSubt.id, mesRealSubt) : colab.cargo;
+  const custoHojeSubt = anoRealObjSubt ? Store.custoMensalEfetivo(colab.id, anoRealObjSubt.id, mesRealSubt) : colab.custoMensal;
+  el('colabDetSubtitle').textContent = `${cargoHojeSubt} · Custo mensal integral: ${formatCurrency(custoHojeSubt)}`;
+  
   const anos = [...Store.data.anos].sort((a,b)=>a.ano-b.ano);
   const selAno = el('colabAno');
   selAno.innerHTML = anos.length

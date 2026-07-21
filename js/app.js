@@ -317,18 +317,21 @@ function renderChartEvolucao(){
     return;
   }
   const filtro = projetoFiltroAtual();
-  // Mostra os 12 meses sempre: os que já aconteceram com dado real, e os
-  // futuros com o GASTO projetado (mesma equipe de hoje, respeitando saídas
-  // e mudanças de cargo já agendadas) — pintado numa cor mais clara pra ficar
-  // óbvio que é previsão. O GANHO nunca é suposição: é sempre o que já foi
-  // efetivamente lançado (recorrente ou pontual).
-  const gastos = [], ganhos = [], coresGasto = [];
+  // Mostra os 12 meses sempre. O GASTO futuro é uma estimativa (repete a
+  // equipe de hoje, respeitando saídas/mudanças de cargo já agendadas); o
+  // GANHO futuro não é chute — é o que já está lançado/agendado. Mas os dois
+  // ficam com uma cor mais clara nos meses futuros, porque nenhum dos dois
+  // "aconteceu" de fato ainda — é só pra deixar visualmente claro que aquele
+  // mês ainda está por vir.
+  const gastos = [], ganhos = [], coresGasto = [], coresGanho = [];
   const corGastoReal = '#C2483C', corGastoPrevisto = '#E8AFA6';
+  const corGanhoReal = '#0E7C6B', corGanhoPrevisto = '#9BD1C4';
   for(let m=1;m<=12;m++){
     const futuro = Store.ehMesFuturo(ctx.anoId, m);
     gastos.push(Store.gastoTotalComPrevisao(ctx.anoId, m, filtro));
     ganhos.push(Store.ganho(ctx.anoId, m, filtro));
     coresGasto.push(futuro ? corGastoPrevisto : corGastoReal);
+    coresGanho.push(futuro ? corGanhoPrevisto : corGanhoReal);
   }
   if(chartEvolucao) chartEvolucao.destroy();
   chartEvolucao = new Chart(canvas, {
@@ -337,7 +340,7 @@ function renderChartEvolucao(){
       labels: MESES,
       datasets: [
         { label:'Gasto', data:gastos, backgroundColor:coresGasto, borderRadius:4, maxBarThickness:26 },
-        { label:'Ganho', data:ganhos, backgroundColor:'#0E7C6B', borderRadius:4, maxBarThickness:26 }
+        { label:'Ganho', data:ganhos, backgroundColor:coresGanho, borderRadius:4, maxBarThickness:26 }
       ]
     },
     options: {
@@ -356,7 +359,7 @@ function renderChartEvolucao(){
   const anoObjChart = Store.getAno(ctx.anoId);
   const legenda = el('chartPrevisaoLegenda');
   if(anoObjChart && anoObjChart.ano === anoRealAtual && mesRealAtual < 12){
-    legenda.innerHTML = `<span class="badge previsao">Previsão</span> Barras de Gasto mais claras (a partir de ${MESES_LONGO[mesRealAtual]}) são uma projeção com a equipe de hoje — não é o gasto real ainda.`;
+    legenda.innerHTML = `<span class="badge previsao">Previsão</span> Barras mais claras (a partir de ${MESES_LONGO[mesRealAtual]}) são meses que ainda não aconteceram: o Ganho já está lançado, mas o Gasto é uma estimativa com a equipe de hoje.`;
   }else{
     legenda.textContent = '';
   }

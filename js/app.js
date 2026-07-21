@@ -1622,6 +1622,223 @@ el('btnExport').addEventListener('click', ()=>{
 });
 
 // ---------------------------------------------------------------------------
+// Exportar Excel — snapshot do Dashboard no período/projeto atualmente
+// selecionado na barra de contexto (Ano/Mês/Projeto), com o visual da marca.
+// ---------------------------------------------------------------------------
+function nomeArquivoSanitizado(s){
+  return (s || '').toString()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // tira acento
+    .replace(/[\\/:*?"<>|]/g, '')
+    .replace(/\s+/g, '-');
+}
+
+async function gerarExcelDashboard(){
+  const NAVY = 'FF0F2947', TEAL = 'FF0E7C74', LIME = 'FF16D888';
+  const LOSS = 'FFC23B34', GAIN = 'FF0E7C74', MUTED = 'FF667085', LINE = 'FFE4E7EC';
+  const WHITE = 'FFFFFFFF', PREVISAO_BG = 'FFFBEAE7', PREVISAO_TXT = 'FFB5544A';
+
+  const anoObj = Store.getAno(ctx.anoId);
+  const filtro = projetoFiltroAtual();
+  const projTxt = filtro==='ALL' ? 'Todos os projetos' : filtro==='GERAL' ? 'Geral (sem projeto)' : nomeProjeto(ctx.projetoId);
+  const mesTxt = ctx.mes==='ano' ? 'Ano completo' : MESES_LONGO[ctx.mes-1];
+  const ehAnoTodoExp = ctx.mes === 'ano';
+  const anoRealExp = new Date().getFullYear();
+  const mesRealExp = new Date().getMonth() + 1;
+  const incluiPrevisaoExp = anoObj.ano === anoRealExp && (ehAnoTodoExp ? mesRealExp < 12 : ctx.mes > mesRealExp);
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'NEX · ROI de Projetos';
+  wb.created = new Date();
+  const ws = wb.addWorksheet('Dashboard', { views:[{ showGridLines:false }] });
+  ws.columns = [{width:26},{width:16},{width:16},{width:16},{width:14},{width:16}];
+
+  let linha = 1;
+  ws.mergeCells(`A${linha}:F${linha}`);
+  ws.getCell(`A${linha}`).value = 'NEX · ROI de Projetos';
+  ws.getCell(`A${linha}`).font = { bold:true, size:16, color:{argb:WHITE}, name:'Georgia' };
+  ws.getCell(`A${linha}`).fill = { type:'pattern', pattern:'solid', fgColor:{argb:NAVY} };
+  ws.getCell(`A${linha}`).alignment = { vertical:'middle', indent:1 };
+  ws.getRow(linha).height = 28;
+  linha++;
+
+  ws.mergeCells(`A${linha}:F${linha}`);
+  ws.getCell(`A${linha}`).value = `${anoObj.ano} · ${mesTxt} · ${projTxt}`;
+  ws.getCell(`A${linha}`).font = { italic:true, size:11, color:{argb:WHITE} };
+  ws.getCell(`A${linha}`).fill = { type:'pattern', pattern:'solid', fgColor:{argb:TEAL} };
+  ws.getCell(`A${linha}`).alignment = { vertical:'middle', indent:1 };
+  ws.getRow(linha).height = 20;
+  linha += 2;
+
+  function tituloSecao(texto){
+    ws.mergeCells(`A${linha}:F${linha}`);
+    const cel = ws.getCell(`A${linha}`);
+    cel.value = texto;
+    cel.font = { bold:true, size:12, color:{argb:NAVY} };
+    cel.border = { bottom:{ style:'medium', color:{argb:NAVY} } };
+    linha++;
+  }
+
+  function celMoeda(cel, valor, corTexto){
+    cel.value = valor;
+    cel.numFmt = '"R$" #,##0.00';
+    cel.alignment = { horizontal:'right' };
+    if(corTexto) cel.font = { color:{argb:corTexto} };
+  }
+
+  tituloSecao('Resumo do período');
+  const semAnoExp = !ctx.anoId;
+  const gastoExp = semAnoExp ? 0 : metrica(Store.gastoTotalComPrevisao, filtro);
+  const ganhoExp = semAnoExp ? 0 : metrica(Store.ganho, filtro);
+  const saldoExp = ganhoExp - gastoExp;
+  const gastoAcumExp = semAnoExp ? 0 : acumuladoAteMes(Store.gastoTotalComPrevisao, filtro);
+  const ganhoAcumExp = semAnoExp ? 0 : acumuladoAteMes(Store.ganho, filtro);
+  const colabCountExp = semAnoExp ? 0 : new Set(colaboradoresPeriodo(ctx.anoId, ctx.mes, filtro).map(l=>l.colaborador.id)).size;
+
+  const kpiLabels = ['Gasto total','Ganho total','Saldo','Colaboradores'];
+  const kpiValores = [gastoExp, ganhoExp, saldoExp, colabCountExp];
+  const kpiCores = [LOSS, GAIN, saldoExp>=0?GAIN:LOSS, null];
+  if(!ehAnoTodoExp){
+    kpiLabels.push('ROI do mês');
+    const roiMes = roiPercent(gastoExp, ganhoExp);
+    kpiValores.push(roiMes===null ? '—' : `${roiMes>0?'+':''}${roiMes.toFixed(1).replace('.0','')}%`);
+    kpiCores.push(roiMes===null ? MUTED : (roiMes>=0?GAIN:LOSS));
+  }
+  kpiLabels.push('ROI acumulado');
+  const roiAcum = roiPercent(gastoAcumExp, ganhoAcumExp);
+  kpiValores.push(roiAcum===null ? '—' : `${roiAcum>0?'+':''}${roiAcum.toFixed(1).replace('.0','')}%`);
+  kpiCores.push(roiAcum===null ? MUTED : (roiAcum>=0?GAIN:LOSS));
+
+  kpiLabels.forEach((lab,i)=>{
+    const cel = ws.getCell(linha, i+1);
+    cel.value = lab;
+    cel.font = { bold:true, size:10, color:{argb:MUTED} };
+  });
+  linha++;
+  kpiValores.forEach((val,i)=>{
+    const cel = ws.getCell(linha, i+1);
+    if(i===3){ cel.value = val; cel.font = { bold:true, size:13 }; }
+    else if(typeof val === 'number'){ celMoeda(cel, val, kpiCores[i]); cel.font = { bold:true, size:13, color:{argb:kpiCores[i]} }; }
+    else { cel.value = val; cel.font = { bold:true, size:13, color:{argb:kpiCores[i]} }; cel.alignment = { horizontal:'right' }; }
+  });
+  linha += 2;
+
+  tituloSecao('Gasto × Ganho por projeto');
+  const cabecalhoProj = ['Projeto','Gasto','Ganho','Saldo'];
+  if(!ehAnoTodoExp) cabecalhoProj.push('ROI do mês');
+  cabecalhoProj.push('ROI acumulado');
+  cabecalhoProj.forEach((h,i)=>{
+    const cel = ws.getCell(linha, i+1);
+    cel.value = h;
+    cel.font = { bold:true, size:10, color:{argb:WHITE} };
+    cel.fill = { type:'pattern', pattern:'solid', fgColor:{argb:NAVY} };
+    cel.alignment = i===0 ? {} : { horizontal:'right' };
+  });
+  linha++;
+
+  const projetosDoAnoExp = ctx.anoId ? Store.projetosDoAno(ctx.anoId) : [];
+  const linhasProjExp = projetosDoAnoExp.map(p=>({
+    nome: p.nome,
+    gasto: metrica(Store.gastoTotalComPrevisao, p.id),
+    ganho: metrica(Store.ganho, p.id),
+    gastoAcum: acumuladoAteMes(Store.gastoTotalComPrevisao, p.id),
+    ganhoAcum: acumuladoAteMes(Store.ganho, p.id)
+  }));
+  const geralGanhoExp = ctx.anoId ? metrica(Store.ganho, 'GERAL') : 0;
+  const geralGastoExp = ctx.anoId ? metrica(Store.gastoTotalComPrevisao, 'GERAL') : 0;
+  if(geralGanhoExp || geralGastoExp){
+    linhasProjExp.push({ nome:'Geral (sem projeto)', gasto:geralGastoExp, ganho:geralGanhoExp,
+      gastoAcum: acumuladoAteMes(Store.gastoTotalComPrevisao,'GERAL'), ganhoAcum: acumuladoAteMes(Store.ganho,'GERAL') });
+  }
+  linhasProjExp.forEach(l=>{
+    const s = l.ganho - l.gasto;
+    ws.getCell(linha,1).value = l.nome;
+    celMoeda(ws.getCell(linha,2), l.gasto, LOSS);
+    celMoeda(ws.getCell(linha,3), l.ganho, GAIN);
+    celMoeda(ws.getCell(linha,4), s, s>=0?GAIN:LOSS);
+    let col = 5;
+    if(!ehAnoTodoExp){
+      const r1 = roiPercent(l.gasto, l.ganho);
+      const cel = ws.getCell(linha,col);
+      cel.value = r1===null ? '—' : `${r1>0?'+':''}${r1.toFixed(1).replace('.0','')}%`;
+      cel.font = { color:{argb: r1===null?MUTED:(r1>=0?GAIN:LOSS)} };
+      cel.alignment = { horizontal:'right' };
+      col++;
+    }
+    const r2 = roiPercent(l.gastoAcum, l.ganhoAcum);
+    const cel2 = ws.getCell(linha,col);
+    cel2.value = r2===null ? '—' : `${r2>0?'+':''}${r2.toFixed(1).replace('.0','')}%`;
+    cel2.font = { color:{argb: r2===null?MUTED:(r2>=0?GAIN:LOSS)} };
+    cel2.alignment = { horizontal:'right' };
+    ws.getRow(linha).eachCell(c=>{ c.border = { bottom:{style:'thin', color:{argb:LINE}} }; });
+    linha++;
+  });
+  if(linhasProjExp.length===0){
+    ws.getCell(linha,1).value = 'Nenhum projeto cadastrado neste ano.';
+    ws.getCell(linha,1).font = { italic:true, color:{argb:MUTED} };
+    linha++;
+  }
+  linha++;
+
+  tituloSecao('Colaboradores no período');
+  const cabecalhoColab = ['Colaborador','Cargo','Projeto','% Alocação','Custo no projeto'];
+  cabecalhoColab.forEach((h,i)=>{
+    const cel = ws.getCell(linha, i+1);
+    cel.value = h;
+    cel.font = { bold:true, size:10, color:{argb:WHITE} };
+    cel.fill = { type:'pattern', pattern:'solid', fgColor:{argb:NAVY} };
+    cel.alignment = i>=3 ? { horizontal:'right' } : {};
+  });
+  linha++;
+  const linhasColabExp = ctx.anoId ? colaboradoresPeriodo(ctx.anoId, ctx.mes, filtro) : [];
+  linhasColabExp.forEach(l=>{
+    ws.getCell(linha,1).value = l.colaborador.nome;
+    ws.getCell(linha,2).value = l.cargoEfetivo || l.colaborador.cargo;
+    ws.getCell(linha,3).value = l.projetoNome;
+    ws.getCell(linha,4).value = l.percentualLabel;
+    ws.getCell(linha,4).alignment = { horizontal:'right' };
+    celMoeda(ws.getCell(linha,5), l.custo);
+    ws.getRow(linha).eachCell(c=>{ c.border = { bottom:{style:'thin', color:{argb:LINE}} }; });
+    linha++;
+  });
+  if(linhasColabExp.length===0){
+    ws.getCell(linha,1).value = 'Ninguém alocado neste período.';
+    ws.getCell(linha,1).font = { italic:true, color:{argb:MUTED} };
+    linha++;
+  }
+
+  if(incluiPrevisaoExp){
+    linha++;
+    ws.mergeCells(`A${linha}:F${linha}`);
+    const cel = ws.getCell(`A${linha}`);
+    cel.value = '⚠ Este período inclui meses que ainda não aconteceram: o Ganho já está lançado/agendado, mas o Gasto é uma estimativa com a equipe de hoje (respeitando saídas e mudanças de cargo já agendadas).';
+    cel.font = { italic:true, size:10, color:{argb:PREVISAO_TXT} };
+    cel.fill = { type:'pattern', pattern:'solid', fgColor:{argb:PREVISAO_BG} };
+    cel.alignment = { wrapText:true, vertical:'middle' };
+    ws.getRow(linha).height = 30;
+  }
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `NEX-ROI_${nomeArquivoSanitizado(String(anoObj.ano))}_${nomeArquivoSanitizado(mesTxt)}_${nomeArquivoSanitizado(projTxt)}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+el('btnExportExcel').addEventListener('click', async ()=>{
+  if(typeof ExcelJS === 'undefined'){ toast('Não foi possível carregar a biblioteca de Excel.'); return; }
+  if(!ctx.anoId){ toast('Selecione um ano primeiro.'); return; }
+  try{
+    await gerarExcelDashboard();
+  }catch(err){
+    console.error(err);
+    toast('Não foi possível gerar o Excel.');
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Início
 // ---------------------------------------------------------------------------
 (function init(){

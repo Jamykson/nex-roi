@@ -77,10 +77,16 @@
 
     <!-- DASHBOARD -->
     <section class="page active" id="page-dashboard">
-      <div class="page-head">
-        <span class="eyebrow">Visão geral</span>
-        <h1>Dashboard</h1>
-        <p class="muted" id="dashSubtitle">Visão consolidada do período selecionado.</p>
+      <div class="page-head" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+        <div>
+          <span class="eyebrow">Visão geral</span>
+          <h1>Dashboard</h1>
+          <p class="muted" id="dashSubtitle">Visão consolidada do período selecionado.</p>
+        </div>
+        <button class="ghost-btn" id="btnExportExcel" title="Baixar o período atual em Excel">
+          <svg class="icon" viewBox="0 0 20 20" style="width:14px;height:14px"><path d="M10 3v9M6.5 9l3.5 3.5L13.5 9"/><path d="M4 15.5h12"/></svg>
+          Exportar Excel
+        </button>
       </div>
 
       <div class="kpi-row">
@@ -529,6 +535,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="js/chart.umd.min.js"></script>
+<script src="js/exceljs.min.js"></script>
 <script src="js/store.js"></script>
 <script src="js/app.js"></script>
 </body>

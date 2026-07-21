@@ -317,6 +317,18 @@ function renderColaboradoresAgrupados(linhas){
   }).join('');
 }
 
+// Clicar numa barra de qualquer um dos gráficos do Dashboard seleciona
+// aquele mês, do mesmo jeito que clicar na aba do mês faria.
+function selecionarMesPeloGrafico(elements){
+  if(!elements || elements.length===0) return;
+  const mesClicado = elements[0].index + 1;
+  ctx.mes = mesClicado;
+  rerenderCurrent();
+}
+function cursorDoGrafico(evt, elements){
+  evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+}
+
 function renderChartEvolucao(){
   const canvas = el('chartEvolucao');
   if(typeof Chart === 'undefined'){
@@ -357,6 +369,8 @@ function renderChartEvolucao(){
     options: {
       responsive:true,
       maintainAspectRatio:false,
+      onClick: (evt, elements) => selecionarMesPeloGrafico(elements),
+      onHover: (evt, elements) => cursorDoGrafico(evt, elements),
       plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{ family:'Work Sans', size:11 } } } },
       scales:{
         y:{ min:0, suggestedMax:100, ticks:{ callback:v=>'R$ '+v.toLocaleString('pt-BR'), font:{ family:'IBM Plex Mono', size:10 } }, grid:{ color:'#EDF0F5' } },
@@ -414,6 +428,8 @@ function renderChartRoiMensal(){
     options: {
       responsive:true,
       maintainAspectRatio:false,
+      onClick: (evt, elements) => selecionarMesPeloGrafico(elements),
+      onHover: (evt, elements) => cursorDoGrafico(evt, elements),
       plugins:{
         legend:{ display:false },
         tooltip:{ callbacks:{ label:(item)=> item.raw===null ? 'Sem gasto no mês' : `ROI: ${item.raw>0?'+':''}${item.raw.toFixed(1)}%` } }

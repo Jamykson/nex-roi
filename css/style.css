@@ -204,10 +204,17 @@ select,input{font-family:inherit; font-size:14px;}
   background:conic-gradient(from 45deg, rgba(22,216,136,.35), transparent 40%);
   border-radius:40%;
   transform:rotate(20deg);
+  z-index:0;
 }
 #page-dashboard .page-head h1{color:#fff;}
 #page-dashboard .page-head .muted{color:#CFE6DE;}
 #page-dashboard .page-head .eyebrow{color:var(--lime-500);}
+#page-dashboard .page-head #btnExportExcel{
+  position:relative; z-index:1;
+  color:#C7E2D8; border:1px solid rgba(255,255,255,.35); background:rgba(255,255,255,.08);
+  flex-shrink:0;
+}
+#page-dashboard .page-head #btnExportExcel:hover{background:rgba(255,255,255,.18); color:#fff;}
 
 /* ============ Painéis ============ */
 .panel{

@@ -154,6 +154,11 @@ function renderDashboard(){
   const gasto = semAno ? 0 : metrica(Store.gastoTotalComPrevisao, filtro);
   const ganho = semAno ? 0 : metrica(Store.ganho, filtro);
   const saldo = ganho - gasto;
+  // ROI usa um gasto separado, sem os projetos de Cultura — eles nunca têm
+  // ganho por definição, então incluir o gasto deles no ROI puxaria o número
+  // pra baixo sem nenhuma contrapartida possível. "Gasto total"/"Saldo"
+  // continuam mostrando o valor real, sem esse filtro.
+  const gastoParaRoi = semAno ? 0 : metrica(Store.gastoTotalParaRoi, filtro);
 
   el('kpiGasto').textContent = formatCurrency(gasto);
   el('kpiGanho').textContent = formatCurrency(ganho);
@@ -163,10 +168,11 @@ function renderDashboard(){
   stampSaldo.classList.toggle('negativo', saldo<0);
   const ehAnoTodo = ctx.mes === 'ano';
   el('kpiRoiCard').style.display = ehAnoTodo ? 'none' : '';
-  el('kpiRoi').innerHTML = semAno ? '—' : roiLabel(gasto, ganho);
+  el('kpiRoi').innerHTML = semAno ? '—' : roiLabel(gastoParaRoi, ganho);
   const gastoAcum = semAno ? 0 : acumuladoAteMes(Store.gastoTotalComPrevisao, filtro);
+  const gastoAcumParaRoi = semAno ? 0 : acumuladoAteMes(Store.gastoTotalParaRoi, filtro);
   const ganhoAcum = semAno ? 0 : acumuladoAteMes(Store.ganho, filtro);
-  el('kpiRoiAcumulado').innerHTML = semAno ? '—' : roiLabel(gastoAcum, ganhoAcum);
+  el('kpiRoiAcumulado').innerHTML = semAno ? '—' : roiLabel(gastoAcumParaRoi, ganhoAcum);
 
     const anoObj = Store.getAno(ctx.anoId);
   const projTxt = filtro==='ALL' ? 'todos os projetos' : filtro==='GERAL' ? 'lançamentos gerais' : nomeProjeto(ctx.projetoId);
@@ -188,6 +194,7 @@ function renderDashboard(){
     const projetosDoAno = Store.projetosDoAno(ctx.anoId);
     const linhas = projetosDoAno.map(p=>({
       nome: p.nome, cor: p.cor,
+      ehCultura: (p.tipo||'impacto')==='cultura',
       gasto: metrica(Store.gastoTotalComPrevisao, p.id),
       ganho: metrica(Store.ganho, p.id),
       gastoAcum: acumuladoAteMes(Store.gastoTotalComPrevisao, p.id),
@@ -196,7 +203,7 @@ function renderDashboard(){
     const geralGanho = metrica(Store.ganho, 'GERAL');
     const geralGasto = metrica(Store.gastoTotalComPrevisao, 'GERAL');
     if(geralGanho || geralGasto) linhas.push({
-      nome:'Geral (sem projeto)', cor:'#98A2B3', gasto:geralGasto, ganho:geralGanho,
+      nome:'Geral (sem projeto)', cor:'#98A2B3', ehCultura:false, gasto:geralGasto, ganho:geralGanho,
       gastoAcum: acumuladoAteMes(Store.gastoTotalComPrevisao, 'GERAL'), ganhoAcum: acumuladoAteMes(Store.ganho, 'GERAL')
     });
 
@@ -206,13 +213,17 @@ function renderDashboard(){
     }else{
       tbody.innerHTML = linhas.map(l=>{
         const s = l.ganho - l.gasto;
+        // ROI não existe pra projetos de Cultura (nunca têm ganho pra
+        // comparar) — mostra "—" em vez de um -100% que não quer dizer nada.
+        const roiMesTxt = l.ehCultura ? '<span class="muted">—</span>' : roiLabel(l.gasto, l.ganho);
+        const roiAcumTxt = l.ehCultura ? '<span class="muted">—</span>' : roiLabel(l.gastoAcum, l.ganhoAcum);
         return `<tr>
           <td><span class="color-dot" style="background:${l.cor}"></span>${escapeHtml(l.nome)}</td>
           <td class="num loss-text">${formatCurrency(l.gasto)}</td>
           <td class="num gain-text">${formatCurrency(l.ganho)}</td>
           <td class="num" style="color:${s>=0?'var(--gain)':'var(--loss)'}">${formatCurrency(s)}</td>
-          ${ehAnoTodo ? '' : `<td class="num">${roiLabel(l.gasto, l.ganho)}</td>`}
-          <td class="num">${roiLabel(l.gastoAcum, l.ganhoAcum)}</td>
+          ${ehAnoTodo ? '' : `<td class="num">${roiMesTxt}</td>`}
+          <td class="num">${roiAcumTxt}</td>
         </tr>`;
       }).join('');
     }
@@ -410,7 +421,7 @@ function renderChartRoiMensal(){
   const corNula = '#CBD2DC';
   for(let m=1;m<=12;m++){
     const futuro = Store.ehMesFuturo(ctx.anoId, m);
-    const gastoMes = Store.gastoTotalComPrevisao(ctx.anoId, m, filtro);
+    const gastoMes = Store.gastoTotalParaRoi(ctx.anoId, m, filtro);
     const ganhoMes = Store.ganho(ctx.anoId, m, filtro);
     const roi = roiPercent(gastoMes, ganhoMes);
     valores.push(roi);
@@ -1768,7 +1779,8 @@ async function gerarExcelDashboard(){
   const gastoExp = semAnoExp ? 0 : metrica(Store.gastoTotalComPrevisao, filtro);
   const ganhoExp = semAnoExp ? 0 : metrica(Store.ganho, filtro);
   const saldoExp = ganhoExp - gastoExp;
-  const gastoAcumExp = semAnoExp ? 0 : acumuladoAteMes(Store.gastoTotalComPrevisao, filtro);
+  const gastoParaRoiExp = semAnoExp ? 0 : metrica(Store.gastoTotalParaRoi, filtro);
+  const gastoAcumExp = semAnoExp ? 0 : acumuladoAteMes(Store.gastoTotalParaRoi, filtro);
   const ganhoAcumExp = semAnoExp ? 0 : acumuladoAteMes(Store.ganho, filtro);
   const colabCountExp = semAnoExp ? 0 : new Set(colaboradoresPeriodo(ctx.anoId, ctx.mes, filtro).map(l=>l.colaborador.id)).size;
 
@@ -1777,7 +1789,7 @@ async function gerarExcelDashboard(){
   const kpiCores = [LOSS, GAIN, saldoExp>=0?GAIN:LOSS, null];
   if(!ehAnoTodoExp){
     kpiLabels.push('ROI do mês');
-    const roiMes = roiPercent(gastoExp, ganhoExp);
+    const roiMes = roiPercent(gastoParaRoiExp, ganhoExp);
     kpiValores.push(roiMes===null ? '—' : `${roiMes>0?'+':''}${roiMes.toFixed(1).replace('.0','')}%`);
     kpiCores.push(roiMes===null ? MUTED : (roiMes>=0?GAIN:LOSS));
   }
@@ -1816,6 +1828,7 @@ async function gerarExcelDashboard(){
   const projetosDoAnoExp = ctx.anoId ? Store.projetosDoAno(ctx.anoId) : [];
   const linhasProjExp = projetosDoAnoExp.map(p=>({
     nome: p.nome,
+    ehCultura: (p.tipo||'impacto')==='cultura',
     gasto: metrica(Store.gastoTotalComPrevisao, p.id),
     ganho: metrica(Store.ganho, p.id),
     gastoAcum: acumuladoAteMes(Store.gastoTotalComPrevisao, p.id),
@@ -1824,7 +1837,7 @@ async function gerarExcelDashboard(){
   const geralGanhoExp = ctx.anoId ? metrica(Store.ganho, 'GERAL') : 0;
   const geralGastoExp = ctx.anoId ? metrica(Store.gastoTotalComPrevisao, 'GERAL') : 0;
   if(geralGanhoExp || geralGastoExp){
-    linhasProjExp.push({ nome:'Geral (sem projeto)', gasto:geralGastoExp, ganho:geralGanhoExp,
+    linhasProjExp.push({ nome:'Geral (sem projeto)', ehCultura:false, gasto:geralGastoExp, ganho:geralGanhoExp,
       gastoAcum: acumuladoAteMes(Store.gastoTotalComPrevisao,'GERAL'), ganhoAcum: acumuladoAteMes(Store.ganho,'GERAL') });
   }
   linhasProjExp.forEach(l=>{
@@ -1835,14 +1848,14 @@ async function gerarExcelDashboard(){
     celMoeda(ws.getCell(linha,4), s, s>=0?GAIN:LOSS);
     let col = 5;
     if(!ehAnoTodoExp){
-      const r1 = roiPercent(l.gasto, l.ganho);
+      const r1 = l.ehCultura ? null : roiPercent(l.gasto, l.ganho);
       const cel = ws.getCell(linha,col);
       cel.value = r1===null ? '—' : `${r1>0?'+':''}${r1.toFixed(1).replace('.0','')}%`;
       cel.font = { color:{argb: r1===null?MUTED:(r1>=0?GAIN:LOSS)} };
       cel.alignment = { horizontal:'right' };
       col++;
     }
-    const r2 = roiPercent(l.gastoAcum, l.ganhoAcum);
+    const r2 = l.ehCultura ? null : roiPercent(l.gastoAcum, l.ganhoAcum);
     const cel2 = ws.getCell(linha,col);
     cel2.value = r2===null ? '—' : `${r2>0?'+':''}${r2.toFixed(1).replace('.0','')}%`;
     cel2.font = { color:{argb: r2===null?MUTED:(r2>=0?GAIN:LOSS)} };

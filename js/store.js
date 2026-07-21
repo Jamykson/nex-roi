@@ -552,9 +552,22 @@ const Store = {
     return custoBase * (pct/100);
   },
 
-  // gasto de folha total (todos colaboradores) em um mês, opcionalmente por projeto
-  gastoFolha(anoId, mes, projetoFiltro){
-    const alocs = this.getAlocacoesDoMes(anoId, mes).filter(a=> this._matchProjeto(a.projetoId, projetoFiltro));
+  // Diz se um registro pertence a um projeto do tipo Cultura (projetos de
+  // Cultura nunca têm ganho — por isso o gasto deles não deve contar no ROI,
+  // senão puxa o número pra baixo sem nenhuma contrapartida possível).
+  _projetoEhCultura(projetoId){
+    if(!projetoId) return false; // "Geral" (sem projeto) nunca é Cultura
+    const p = this.data.projetos.find(x=>x.id===projetoId);
+    return !!(p && (p.tipo||'impacto')==='cultura');
+  },
+
+  // gasto de folha total (todos colaboradores) em um mês, opcionalmente por projeto.
+  // semCultura=true tira as alocações de projetos de Cultura da soma — usado
+  // só para o cálculo de ROI, nunca para o "Gasto total" de verdade.
+  gastoFolha(anoId, mes, projetoFiltro, semCultura){
+    const alocs = this.getAlocacoesDoMes(anoId, mes)
+      .filter(a=> this._matchProjeto(a.projetoId, projetoFiltro))
+      .filter(a=> !semCultura || !this._projetoEhCultura(a.projetoId));
     return alocs.reduce((sum, a)=>{
       const colab = this.data.colaboradores.find(c=>c.id===a.colaboradorId);
       if(!colab) return sum;
@@ -563,11 +576,16 @@ const Store = {
     }, 0);
   },
 
-  gastoExtra(anoId, mes, projetoFiltro){ return this._somaLancamentos('gastosExtras', anoId, mes, projetoFiltro); },
+  gastoExtra(anoId, mes, projetoFiltro, semCultura){
+    return this.data.gastosExtras
+      .filter(l => l.anoId===anoId && this._lancamentoAplicaNoMes(l, mes) && this._matchProjeto(l.projetoId, projetoFiltro))
+      .filter(l => !semCultura || !this._projetoEhCultura(l.projetoId))
+      .reduce((s,l)=>s+l.valor, 0);
+  },
   ganho(anoId, mes, projetoFiltro){ return this._somaLancamentos('ganhos', anoId, mes, projetoFiltro); },
 
-  gastoTotal(anoId, mes, projetoFiltro){
-    return this.gastoFolha(anoId, mes, projetoFiltro) + this.gastoExtra(anoId, mes, projetoFiltro);
+  gastoTotal(anoId, mes, projetoFiltro, semCultura){
+    return this.gastoFolha(anoId, mes, projetoFiltro, semCultura) + this.gastoExtra(anoId, mes, projetoFiltro, semCultura);
   },
 
   // Diz se um (ano, mês) ainda está no futuro em relação a hoje (data real
@@ -587,13 +605,15 @@ const Store = {
   // o salário EFETIVO de cada um no mês futuro (o que já respeita mudanças
   // de cargo/salário já agendadas), e tira quem já tem saída agendada antes
   // desse mês.
-  gastoFolhaProjetado(anoId, mesAlvo, projetoFiltro){
+  gastoFolhaProjetado(anoId, mesAlvo, projetoFiltro, semCultura){
     const anoObj = this.getAno(anoId);
     if(!anoObj) return 0;
     const anoReal = new Date().getFullYear();
     const mesReal = new Date().getMonth() + 1;
     const mesBase = (anoObj.ano === anoReal) ? mesReal : 12;
-    const alocsBase = this.getAlocacoesDoMes(anoId, mesBase).filter(a=> this._matchProjeto(a.projetoId, projetoFiltro));
+    const alocsBase = this.getAlocacoesDoMes(anoId, mesBase)
+      .filter(a=> this._matchProjeto(a.projetoId, projetoFiltro))
+      .filter(a=> !semCultura || !this._projetoEhCultura(a.projetoId));
     return alocsBase.reduce((sum, a)=>{
       const colab = this.data.colaboradores.find(c=>c.id===a.colaboradorId);
       if(!colab) return sum;
@@ -607,11 +627,17 @@ const Store = {
   // de sempre; pra meses futuros, usa a folha projetada + os gastos extras
   // já registrados (esses não são suposição, se existem é porque alguém já
   // lançou algo recorrente que cobre aquele mês).
-  gastoTotalComPrevisao(anoId, mes, projetoFiltro){
+  gastoTotalComPrevisao(anoId, mes, projetoFiltro, semCultura){
     if(this.ehMesFuturo(anoId, mes)){
-      return this.gastoFolhaProjetado(anoId, mes, projetoFiltro) + this.gastoExtra(anoId, mes, projetoFiltro);
+      return this.gastoFolhaProjetado(anoId, mes, projetoFiltro, semCultura) + this.gastoExtra(anoId, mes, projetoFiltro, semCultura);
     }
-    return this.gastoTotal(anoId, mes, projetoFiltro);
+    return this.gastoTotal(anoId, mes, projetoFiltro, semCultura);
+  },
+
+  // Mesma coisa que gastoTotalComPrevisao, mas sempre excluindo Cultura —
+  // usado só nos cálculos de ROI (do mês, acumulado, no gráfico).
+  gastoTotalParaRoi(anoId, mes, projetoFiltro){
+    return this.gastoTotalComPrevisao(anoId, mes, projetoFiltro, true);
   },
 
   saldo(anoId, mes, projetoFiltro){

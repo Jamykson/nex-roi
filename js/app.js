@@ -160,6 +160,8 @@ function renderDashboard(){
   const stampSaldo = el('stampSaldo');
   stampSaldo.classList.toggle('positivo', saldo>=0);
   stampSaldo.classList.toggle('negativo', saldo<0);
+  const ehAnoTodo = ctx.mes === 'ano';
+  el('kpiRoiCard').style.display = ehAnoTodo ? 'none' : '';
   el('kpiRoi').innerHTML = semAno ? '—' : roiLabel(gasto, ganho);
   const gastoAcum = semAno ? 0 : acumuladoAteMes(Store.gastoTotalComPrevisao, filtro);
   const ganhoAcum = semAno ? 0 : acumuladoAteMes(Store.ganho, filtro);
@@ -177,7 +179,7 @@ function renderDashboard(){
   el('dashSubtitle').innerHTML = semAno
     ? 'Crie um ano na aba "Anos" para começar.'
     : `${anoObj.ano} · ${periodoTexto()} · ${projTxt}` + (incluiPrevisao ? ' · <span class="badge previsao">Previsão</span> inclui meses ainda não acontecidos' : '');
-    
+
   const tbody = document.querySelector('#tblProjetoResumo tbody');
   if(semAno){
     tbody.innerHTML = `<tr><td colspan="5" class="empty-hint">Nenhum ano selecionado.</td></tr>`;
@@ -197,8 +199,9 @@ function renderDashboard(){
       gastoAcum: acumuladoAteMes(Store.gastoTotalComPrevisao, 'GERAL'), ganhoAcum: acumuladoAteMes(Store.ganho, 'GERAL')
     });
 
+    el('thRoiMes').style.display = ehAnoTodo ? 'none' : '';
     if(linhas.length===0){
-      tbody.innerHTML = `<tr><td colspan="6" class="empty-hint">Cadastre um projeto na aba "Projetos".</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="${ehAnoTodo?5:6}" class="empty-hint">Cadastre um projeto na aba "Projetos".</td></tr>`;
     }else{
       tbody.innerHTML = linhas.map(l=>{
         const s = l.ganho - l.gasto;
@@ -207,7 +210,7 @@ function renderDashboard(){
           <td class="num loss-text">${formatCurrency(l.gasto)}</td>
           <td class="num gain-text">${formatCurrency(l.ganho)}</td>
           <td class="num" style="color:${s>=0?'var(--gain)':'var(--loss)'}">${formatCurrency(s)}</td>
-          <td class="num">${roiLabel(l.gasto, l.ganho)}</td>
+          ${ehAnoTodo ? '' : `<td class="num">${roiLabel(l.gasto, l.ganho)}</td>`}
           <td class="num">${roiLabel(l.gastoAcum, l.ganhoAcum)}</td>
         </tr>`;
       }).join('');

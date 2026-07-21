@@ -179,7 +179,7 @@ function renderDashboard(){
     (ctx.mes === 'ano' ? mesRealAtualSubt < 12 : ctx.mes > mesRealAtualSubt);
   el('dashSubtitle').innerHTML = semAno
     ? 'Crie um ano na aba "Anos" para começar.'
-    : `${anoObj.ano} · ${periodoTexto()} · ${projTxt}` + (incluiPrevisao ? ' · <span class="badge previsao">Previsão</span> inclui meses ainda não acontecidos' : '');
+    : `${anoObj.ano} · ${periodoTexto()} · ${projTxt}` + (incluiPrevisao ? ' · <span class="badge previsao">Previsão</span> inclui gastos e ganhos que ainda não ocorreram' : '');
 
   const tbody = document.querySelector('#tblProjetoResumo tbody');
   if(semAno){

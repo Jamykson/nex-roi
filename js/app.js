@@ -18,6 +18,7 @@ let projetoDetalheId = null; // projeto aberto na página de detalhe
 let colaboradorDetalheId = null; // colaborador aberto na página de detalhe
 let projetosGruposAbertos = new Set(); // ids (do projeto mais antigo da cadeia) que estão expandidos na lista de Projetos
 let chartEvolucao = null;
+let chartRoiMensal = null;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -238,6 +239,7 @@ function renderDashboard(){
   el('kpiColab').textContent = semAno ? '0' : new Set(colaboradoresPeriodo(ctx.anoId, ctx.mes, filtro).map(l=>l.colaborador.id)).size;
 
   renderChartEvolucao();
+  renderChartRoiMensal();
 }
 
 // Junta alocações de um único mês, ou agrega o ano inteiro (média de % / soma de custo)
@@ -368,9 +370,69 @@ function renderChartEvolucao(){
   const anoObjChart = Store.getAno(ctx.anoId);
   const legenda = el('chartPrevisaoLegenda');
   if(anoObjChart && anoObjChart.ano === anoRealAtual && mesRealAtual < 12){
-    legenda.innerHTML = `<span class="badge previsao">Previsão</span> Barras mais claras (a partir de ${MESES_LONGO[mesRealAtual]}) são meses que ainda não aconteceram: uma estimativa baseada nos ganhos que esperamos ter e na equipe de hoje.`;
+    legenda.innerHTML = `<span class="badge previsao">Previsão</span> Barras mais claras (a partir de ${MESES_LONGO[mesRealAtual]}) são meses que ainda não aconteceram: o Ganho já está lançado, mas o Gasto é uma estimativa com a equipe de hoje.`;
   }else{
     legenda.textContent = '';
+  }
+}
+
+// ROI de cada mês individual (não acumulado) — mesma lógica de cores/previsão
+// do gráfico de Evolução: meses futuros ficam mais claros, porque o Gasto
+// deles é estimado.
+function renderChartRoiMensal(){
+  const canvas = el('chartRoiMensal');
+  if(typeof Chart === 'undefined'){
+    canvas.parentElement.innerHTML = '<p class="empty-hint">Não foi possível carregar a biblioteca do gráfico. Os números seguem corretos nas tabelas acima.</p>';
+    return;
+  }
+  if(!ctx.anoId){
+    if(chartRoiMensal){ chartRoiMensal.destroy(); chartRoiMensal=null; }
+    return;
+  }
+  const filtro = projetoFiltroAtual();
+  const valores = [], cores = [];
+  const corPos = '#0E7C6B', corPosPrevisto = '#9BD1C4';
+  const corNeg = '#C2483C', corNegPrevisto = '#E8AFA6';
+  const corNula = '#CBD2DC';
+  for(let m=1;m<=12;m++){
+    const futuro = Store.ehMesFuturo(ctx.anoId, m);
+    const gastoMes = Store.gastoTotalComPrevisao(ctx.anoId, m, filtro);
+    const ganhoMes = Store.ganho(ctx.anoId, m, filtro);
+    const roi = roiPercent(gastoMes, ganhoMes);
+    valores.push(roi);
+    if(roi===null) cores.push(corNula);
+    else if(roi>=0) cores.push(futuro ? corPosPrevisto : corPos);
+    else cores.push(futuro ? corNegPrevisto : corNeg);
+  }
+  if(chartRoiMensal) chartRoiMensal.destroy();
+  chartRoiMensal = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: MESES,
+      datasets: [{ label:'ROI do mês', data:valores, backgroundColor:cores, borderRadius:4, maxBarThickness:26 }]
+    },
+    options: {
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{ display:false },
+        tooltip:{ callbacks:{ label:(item)=> item.raw===null ? 'Sem gasto no mês' : `ROI: ${item.raw>0?'+':''}${item.raw.toFixed(1)}%` } }
+      },
+      scales:{
+        y:{ ticks:{ callback:v=>v+'%', font:{ family:'IBM Plex Mono', size:10 } }, grid:{ color:'#EDF0F5' } },
+        x:{ ticks:{ font:{ family:'IBM Plex Mono', size:11 } }, grid:{ display:false } }
+      }
+    }
+  });
+
+  const anoRealRoi = new Date().getFullYear();
+  const mesRealRoi = new Date().getMonth() + 1;
+  const anoObjRoi = Store.getAno(ctx.anoId);
+  const legendaRoi = el('chartRoiPrevisaoLegenda');
+  if(anoObjRoi && anoObjRoi.ano === anoRealRoi && mesRealRoi < 12){
+    legendaRoi.innerHTML = `<span class="badge previsao">Previsão</span> Meses mais claros (a partir de ${MESES_LONGO[mesRealRoi]}) usam o Gasto estimado com a equipe de hoje.`;
+  }else{
+    legendaRoi.textContent = '';
   }
 }
 
@@ -1829,7 +1891,7 @@ async function gerarExcelDashboard(){
     cel.alignment = { wrapText:true, vertical:'middle' };
     ws.getRow(linhaNota).height = 30;
   }
-  
+
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const url = URL.createObjectURL(blob);

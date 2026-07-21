@@ -570,6 +570,50 @@ const Store = {
     return this.gastoFolha(anoId, mes, projetoFiltro) + this.gastoExtra(anoId, mes, projetoFiltro);
   },
 
+  // Diz se um (ano, mês) ainda está no futuro em relação a hoje (data real
+  // do dispositivo) — usado pra saber quando entra em cena a previsão.
+  ehMesFuturo(anoId, mes){
+    const anoObj = this.getAno(anoId);
+    if(!anoObj) return false;
+    const anoReal = new Date().getFullYear();
+    const mesReal = new Date().getMonth() + 1;
+    if(anoObj.ano !== anoReal) return anoObj.ano > anoReal;
+    return mes > mesReal;
+  },
+
+  // Projeta o gasto de FOLHA de um mês futuro: repete a mesma "mistura" de
+  // alocações (% de cada colaborador em cada projeto) do mês atual real —
+  // já que ninguém preencheu % pros meses que ainda não chegaram — mas usa
+  // o salário EFETIVO de cada um no mês futuro (o que já respeita mudanças
+  // de cargo/salário já agendadas), e tira quem já tem saída agendada antes
+  // desse mês.
+  gastoFolhaProjetado(anoId, mesAlvo, projetoFiltro){
+    const anoObj = this.getAno(anoId);
+    if(!anoObj) return 0;
+    const anoReal = new Date().getFullYear();
+    const mesReal = new Date().getMonth() + 1;
+    const mesBase = (anoObj.ano === anoReal) ? mesReal : 12;
+    const alocsBase = this.getAlocacoesDoMes(anoId, mesBase).filter(a=> this._matchProjeto(a.projetoId, projetoFiltro));
+    return alocsBase.reduce((sum, a)=>{
+      const colab = this.data.colaboradores.find(c=>c.id===a.colaboradorId);
+      if(!colab) return sum;
+      if(this.colaboradorJaSaiu(colab, anoObj.ano, mesAlvo)) return sum; // já não estaria mais na empresa
+      const custoEfetivo = this.custoMensalEfetivo(a.colaboradorId, anoId, mesAlvo);
+      return sum + custoEfetivo * (a.percentual/100);
+    }, 0);
+  },
+
+  // Gasto total "com previsão": pra meses que já aconteceram, é o gasto real
+  // de sempre; pra meses futuros, usa a folha projetada + os gastos extras
+  // já registrados (esses não são suposição, se existem é porque alguém já
+  // lançou algo recorrente que cobre aquele mês).
+  gastoTotalComPrevisao(anoId, mes, projetoFiltro){
+    if(this.ehMesFuturo(anoId, mes)){
+      return this.gastoFolhaProjetado(anoId, mes, projetoFiltro) + this.gastoExtra(anoId, mes, projetoFiltro);
+    }
+    return this.gastoTotal(anoId, mes, projetoFiltro);
+  },
+
   saldo(anoId, mes, projetoFiltro){
     return this.ganho(anoId, mes, projetoFiltro) - this.gastoTotal(anoId, mes, projetoFiltro);
   },

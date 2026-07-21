@@ -150,7 +150,7 @@ function renderDashboard(){
   const semAno = !ctx.anoId;
   const filtro = projetoFiltroAtual();
 
-  const gasto = semAno ? 0 : metrica(Store.gastoTotal, filtro);
+  const gasto = semAno ? 0 : metrica(Store.gastoTotalComPrevisao, filtro);
   const ganho = semAno ? 0 : metrica(Store.ganho, filtro);
   const saldo = ganho - gasto;
 
@@ -161,16 +161,16 @@ function renderDashboard(){
   stampSaldo.classList.toggle('positivo', saldo>=0);
   stampSaldo.classList.toggle('negativo', saldo<0);
   el('kpiRoi').innerHTML = semAno ? '—' : roiLabel(gasto, ganho);
-  const gastoAcum = semAno ? 0 : acumuladoAteMes(Store.gastoTotal, filtro);
+  const gastoAcum = semAno ? 0 : acumuladoAteMes(Store.gastoTotalComPrevisao, filtro);
   const ganhoAcum = semAno ? 0 : acumuladoAteMes(Store.ganho, filtro);
   el('kpiRoiAcumulado').innerHTML = semAno ? '—' : roiLabel(gastoAcum, ganhoAcum);
 
   const anoObj = Store.getAno(ctx.anoId);
   const projTxt = filtro==='ALL' ? 'todos os projetos' : filtro==='GERAL' ? 'lançamentos gerais' : nomeProjeto(ctx.projetoId);
-  el('dashSubtitle').textContent = semAno
+  const mesEhFuturo = !semAno && ctx.mes !== 'ano' && Store.ehMesFuturo(ctx.anoId, ctx.mes);
+  el('dashSubtitle').innerHTML = semAno
     ? 'Crie um ano na aba "Anos" para começar.'
-    : `${anoObj.ano} · ${periodoTexto()} · ${projTxt}`;
-
+    : `${anoObj.ano} · ${periodoTexto()} · ${projTxt}` + (mesEhFuturo ? ' · <span class="badge previsao">Previsão</span> gasto projetado, ainda não é real' : '');
   // Tabela por projeto
   const tbody = document.querySelector('#tblProjetoResumo tbody');
   if(semAno){
@@ -179,16 +179,16 @@ function renderDashboard(){
     const projetosDoAno = Store.projetosDoAno(ctx.anoId);
     const linhas = projetosDoAno.map(p=>({
       nome: p.nome, cor: p.cor,
-      gasto: metrica(Store.gastoTotal, p.id),
+      gasto: metrica(Store.gastoTotalComPrevisao, p.id),
       ganho: metrica(Store.ganho, p.id),
-      gastoAcum: acumuladoAteMes(Store.gastoTotal, p.id),
+      gastoAcum: acumuladoAteMes(Store.gastoTotalComPrevisao, p.id),
       ganhoAcum: acumuladoAteMes(Store.ganho, p.id)
     }));
     const geralGanho = metrica(Store.ganho, 'GERAL');
-    const geralGasto = metrica(Store.gastoTotal, 'GERAL');
+    const geralGasto = metrica(Store.gastoTotalComPrevisao, 'GERAL');
     if(geralGanho || geralGasto) linhas.push({
       nome:'Geral (sem projeto)', cor:'#98A2B3', gasto:geralGasto, ganho:geralGanho,
-      gastoAcum: acumuladoAteMes(Store.gastoTotal, 'GERAL'), ganhoAcum: acumuladoAteMes(Store.ganho, 'GERAL')
+      gastoAcum: acumuladoAteMes(Store.gastoTotalComPrevisao, 'GERAL'), ganhoAcum: acumuladoAteMes(Store.ganho, 'GERAL')
     });
 
     if(linhas.length===0){
@@ -317,24 +317,18 @@ function renderChartEvolucao(){
     return;
   }
   const filtro = projetoFiltroAtual();
-  const anoObj = Store.getAno(ctx.anoId);
-  const anoReal = new Date().getFullYear();
-  const mesRealAtual = new Date().getMonth() + 1;
-  // Só mostra meses que já aconteceram: no ano atual, para até o mês de
-  // hoje (não faz sentido "evoluir" um mês que ainda não chegou); anos
-  // passados mostram os 12 meses normalmente.
-  const ultimoMes = anoObj.ano < anoReal ? 12 : (anoObj.ano === anoReal ? mesRealAtual : 0);
-  const gastos = [], ganhos = [];
+  // Mostra os 12 meses sempre: os que já aconteceram com dado real, e os
+  // futuros com o GASTO projetado (mesma equipe de hoje, respeitando saídas
+  // e mudanças de cargo já agendadas) — pintado numa cor mais clara pra ficar
+  // óbvio que é previsão. O GANHO nunca é suposição: é sempre o que já foi
+  // efetivamente lançado (recorrente ou pontual).
+  const gastos = [], ganhos = [], coresGasto = [];
+  const corGastoReal = '#C2483C', corGastoPrevisto = '#E8AFA6';
   for(let m=1;m<=12;m++){
-    if(m <= ultimoMes){
-      gastos.push(Store.gastoTotal(ctx.anoId, m, filtro));
-      ganhos.push(Store.ganho(ctx.anoId, m, filtro));
-    }else{
-      // mês ainda não chegou: fica sem barra (null), mas o nome do mês
-      // continua aparecendo no eixo, já que os 12 meses do ano existem.
-      gastos.push(null);
-      ganhos.push(null);
-    }
+    const futuro = Store.ehMesFuturo(ctx.anoId, m);
+    gastos.push(Store.gastoTotalComPrevisao(ctx.anoId, m, filtro));
+    ganhos.push(Store.ganho(ctx.anoId, m, filtro));
+    coresGasto.push(futuro ? corGastoPrevisto : corGastoReal);
   }
   if(chartEvolucao) chartEvolucao.destroy();
   chartEvolucao = new Chart(canvas, {
@@ -342,7 +336,7 @@ function renderChartEvolucao(){
     data: {
       labels: MESES,
       datasets: [
-        { label:'Gasto', data:gastos, backgroundColor:'#C2483C', borderRadius:4, maxBarThickness:26 },
+        { label:'Gasto', data:gastos, backgroundColor:coresGasto, borderRadius:4, maxBarThickness:26 },
         { label:'Ganho', data:ganhos, backgroundColor:'#0E7C6B', borderRadius:4, maxBarThickness:26 }
       ]
     },
@@ -356,6 +350,16 @@ function renderChartEvolucao(){
       }
     }
   });
+
+  const anoRealAtual = new Date().getFullYear();
+  const mesRealAtual = new Date().getMonth() + 1;
+  const anoObjChart = Store.getAno(ctx.anoId);
+  const legenda = el('chartPrevisaoLegenda');
+  if(anoObjChart && anoObjChart.ano === anoRealAtual && mesRealAtual < 12){
+    legenda.innerHTML = `<span class="badge previsao">Previsão</span> Barras de Gasto mais claras (a partir de ${MESES_LONGO[mesRealAtual]}) são uma projeção com a equipe de hoje — não é o gasto real ainda.`;
+  }else{
+    legenda.textContent = '';
+  }
 }
 
 // ---------------------------------------------------------------------------

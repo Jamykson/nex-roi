@@ -1650,7 +1650,7 @@ async function gerarExcelDashboard(){
   wb.creator = 'NEX · ROI de Projetos';
   wb.created = new Date();
   const ws = wb.addWorksheet('Dashboard', { views:[{ showGridLines:false }] });
-  ws.columns = [{width:26},{width:16},{width:16},{width:16},{width:14},{width:16}];
+  ws.columns = [{width:26},{width:16},{width:16},{width:16},{width:14},{width:16},{width:22},{width:20},{width:18},{width:12},{width:16}];
 
   let linha = 1;
   ws.mergeCells(`A${linha}:F${linha}`);
@@ -1777,46 +1777,59 @@ async function gerarExcelDashboard(){
     ws.getCell(linha,1).font = { italic:true, color:{argb:MUTED} };
     linha++;
   }
-  linha++;
+ linha++;
 
-  tituloSecao('Colaboradores no período');
+  // ---- Colaboradores no período (fica ao lado, a partir da coluna G,
+  // em vez de embaixo — assim as duas seções ficam visíveis juntas) ----
+  const COL_COLAB = 7; // G
+  let linhaColab = 1;
+  ws.mergeCells(linhaColab, COL_COLAB, linhaColab, COL_COLAB+4);
+  {
+    const cel = ws.getCell(linhaColab, COL_COLAB);
+    cel.value = 'Colaboradores no período';
+    cel.font = { bold:true, size:12, color:{argb:NAVY} };
+    cel.border = { bottom:{ style:'medium', color:{argb:NAVY} } };
+  }
+  linhaColab++;
   const cabecalhoColab = ['Colaborador','Cargo','Projeto','% Alocação','Custo no projeto'];
   cabecalhoColab.forEach((h,i)=>{
-    const cel = ws.getCell(linha, i+1);
+    const cel = ws.getCell(linhaColab, COL_COLAB+i);
     cel.value = h;
     cel.font = { bold:true, size:10, color:{argb:WHITE} };
     cel.fill = { type:'pattern', pattern:'solid', fgColor:{argb:NAVY} };
     cel.alignment = i>=3 ? { horizontal:'right' } : {};
   });
-  linha++;
+  linhaColab++;
   const linhasColabExp = ctx.anoId ? colaboradoresPeriodo(ctx.anoId, ctx.mes, filtro) : [];
   linhasColabExp.forEach(l=>{
-    ws.getCell(linha,1).value = l.colaborador.nome;
-    ws.getCell(linha,2).value = l.cargoEfetivo || l.colaborador.cargo;
-    ws.getCell(linha,3).value = l.projetoNome;
-    ws.getCell(linha,4).value = l.percentualLabel;
-    ws.getCell(linha,4).alignment = { horizontal:'right' };
-    celMoeda(ws.getCell(linha,5), l.custo);
-    ws.getRow(linha).eachCell(c=>{ c.border = { bottom:{style:'thin', color:{argb:LINE}} }; });
-    linha++;
+    ws.getCell(linhaColab, COL_COLAB).value = l.colaborador.nome;
+    ws.getCell(linhaColab, COL_COLAB+1).value = l.cargoEfetivo || l.colaborador.cargo;
+    ws.getCell(linhaColab, COL_COLAB+2).value = l.projetoNome;
+    ws.getCell(linhaColab, COL_COLAB+3).value = l.percentualLabel;
+    ws.getCell(linhaColab, COL_COLAB+3).alignment = { horizontal:'right' };
+    celMoeda(ws.getCell(linhaColab, COL_COLAB+4), l.custo);
+    for(let c=COL_COLAB; c<COL_COLAB+5; c++) ws.getCell(linhaColab,c).border = { bottom:{style:'thin', color:{argb:LINE}} };
+    linhaColab++;
   });
   if(linhasColabExp.length===0){
-    ws.getCell(linha,1).value = 'Ninguém alocado neste período.';
-    ws.getCell(linha,1).font = { italic:true, color:{argb:MUTED} };
-    linha++;
+    const cel = ws.getCell(linhaColab, COL_COLAB);
+    cel.value = 'Ninguém alocado neste período.';
+    cel.font = { italic:true, color:{argb:MUTED} };
+    linhaColab++;
   }
 
+  // ---- Nota de previsão, se for o caso ----
   if(incluiPrevisaoExp){
-    linha++;
-    ws.mergeCells(`A${linha}:F${linha}`);
-    const cel = ws.getCell(`A${linha}`);
+    const linhaNota = Math.max(linha, linhaColab) + 1;
+    ws.mergeCells(`A${linhaNota}:K${linhaNota}`);
+    const cel = ws.getCell(`A${linhaNota}`);
     cel.value = '⚠ Este período inclui meses que ainda não aconteceram: o Ganho já está lançado/agendado, mas o Gasto é uma estimativa com a equipe de hoje (respeitando saídas e mudanças de cargo já agendadas).';
     cel.font = { italic:true, size:10, color:{argb:PREVISAO_TXT} };
     cel.fill = { type:'pattern', pattern:'solid', fgColor:{argb:PREVISAO_BG} };
     cel.alignment = { wrapText:true, vertical:'middle' };
-    ws.getRow(linha).height = 30;
+    ws.getRow(linhaNota).height = 30;
   }
-
+  
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const url = URL.createObjectURL(blob);

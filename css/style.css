@@ -322,7 +322,7 @@ button:disabled:hover{ background:inherit; }
 .data-table tr.grupo-colab-inicio{border-top:2px solid var(--line);}
 .data-table tr.subtotal-colab td{background:var(--surface-alt); font-weight:700; border-top:1px dashed var(--line);}
 .data-table tfoot td{font-weight:700; border-top:2px solid var(--ink); border-bottom:none;}
-.data-table .num{font-family:var(--font-mono); text-align:right; font-variant-numeric:tabular-nums;}
+.data-table .num{font-family:var(--font-mono); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap;}
 .data-table .gain-text{color:var(--gain); font-weight:600;}
 .data-table .loss-text{color:var(--loss); font-weight:600;}
 

@@ -170,7 +170,7 @@ function renderDashboard(){
   const mesEhFuturo = !semAno && ctx.mes !== 'ano' && Store.ehMesFuturo(ctx.anoId, ctx.mes);
   el('dashSubtitle').innerHTML = semAno
     ? 'Crie um ano na aba "Anos" para começar.'
-    : `${anoObj.ano} · ${periodoTexto()} · ${projTxt}` + (mesEhFuturo ? ' · <span class="badge previsao">Previsão</span> gasto projetado, ainda não é real' : '');
+    : `${anoObj.ano} · ${periodoTexto()} · ${projTxt}` + (mesEhFuturo ? ' · <span class="badge previsao">Previsão</span> valores projetados, ainda não são reais' : '');
   // Tabela por projeto
   const tbody = document.querySelector('#tblProjetoResumo tbody');
   if(semAno){

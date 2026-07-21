@@ -165,13 +165,19 @@ function renderDashboard(){
   const ganhoAcum = semAno ? 0 : acumuladoAteMes(Store.ganho, filtro);
   el('kpiRoiAcumulado').innerHTML = semAno ? '—' : roiLabel(gastoAcum, ganhoAcum);
 
-  const anoObj = Store.getAno(ctx.anoId);
+    const anoObj = Store.getAno(ctx.anoId);
   const projTxt = filtro==='ALL' ? 'todos os projetos' : filtro==='GERAL' ? 'lançamentos gerais' : nomeProjeto(ctx.projetoId);
-  const mesEhFuturo = !semAno && ctx.mes !== 'ano' && Store.ehMesFuturo(ctx.anoId, ctx.mes);
+  const anoRealAtualSubt = new Date().getFullYear();
+  const mesRealAtualSubt = new Date().getMonth() + 1;
+  // "Inclui previsão" tanto quando um mês futuro específico está selecionado,
+  // quanto quando "Ano todo" está selecionado e o ano ainda não terminou —
+  // já que nesse caso a soma do ano mistura meses reais com previstos.
+  const incluiPrevisao = !semAno && anoObj.ano === anoRealAtualSubt &&
+    (ctx.mes === 'ano' ? mesRealAtualSubt < 12 : ctx.mes > mesRealAtualSubt);
   el('dashSubtitle').innerHTML = semAno
     ? 'Crie um ano na aba "Anos" para começar.'
-    : `${anoObj.ano} · ${periodoTexto()} · ${projTxt}` + (mesEhFuturo ? ' · <span class="badge previsao">Previsão</span> valores projetados, ainda não são reais' : '');
-  // Tabela por projeto
+    : `${anoObj.ano} · ${periodoTexto()} · ${projTxt}` + (incluiPrevisao ? ' · <span class="badge previsao">Previsão</span> inclui meses ainda não acontecidos' : '');
+    
   const tbody = document.querySelector('#tblProjetoResumo tbody');
   if(semAno){
     tbody.innerHTML = `<tr><td colspan="5" class="empty-hint">Nenhum ano selecionado.</td></tr>`;

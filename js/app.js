@@ -359,7 +359,7 @@ function renderChartEvolucao(){
   const anoObjChart = Store.getAno(ctx.anoId);
   const legenda = el('chartPrevisaoLegenda');
   if(anoObjChart && anoObjChart.ano === anoRealAtual && mesRealAtual < 12){
-    legenda.innerHTML = `<span class="badge previsao">Previsão</span> Barras mais claras (a partir de ${MESES_LONGO[mesRealAtual]}) são meses que ainda não aconteceram: uma estimativa baseado nos ganhos que esperamos ter e na equipe de hoje.`;
+    legenda.innerHTML = `<span class="badge previsao">Previsão</span> Barras mais claras (a partir de ${MESES_LONGO[mesRealAtual]}) são meses que ainda não aconteceram: uma estimativa baseada nos ganhos que esperamos ter e na equipe de hoje.`;
   }else{
     legenda.textContent = '';
   }

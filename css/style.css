@@ -356,6 +356,7 @@ button:disabled:hover{ background:inherit; }
 .data-table tr.grupo-row:hover{background:var(--surface-alt);}
 .chevron{display:inline-block; margin-right:6px; font-size:11px; color:var(--ink-faint); transition:transform .15s ease;}
 .chevron.open{transform:rotate(90deg);}
+.data-table tr.linha-destacada td{background:var(--lime-500); transition:background 1.8s ease;}
 .data-table tr.sub-row td{background:var(--surface-alt);}
 .data-table tr.sub-row td:nth-child(2){padding-left:26px;}
 

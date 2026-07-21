@@ -17,6 +17,7 @@ const ctx = {
 let projetoDetalheId = null; // projeto aberto na página de detalhe
 let colaboradorDetalheId = null; // colaborador aberto na página de detalhe
 let projetosGruposAbertos = new Set(); // ids (do projeto mais antigo da cadeia) que estão expandidos na lista de Projetos
+let anosProjetosAbertos = new Set(); // anoId dos anos com a lista de "projetos ativos" expandida na aba Anos
 let chartEvolucao = null;
 let chartRoiMensal = null;
 
@@ -466,20 +467,66 @@ function renderChartRoiMensal(){
 // ---------------------------------------------------------------------------
 // ANOS (+ ganhos gerais da empresa, sem projeto)
 // ---------------------------------------------------------------------------
+// Pra um ano (número, ex.: 2024), acha — em cada cadeia de renovação — a
+// edição do projeto que estava "ativa" ali. Cobre o caso de um projeto criado
+// num ano anterior e ainda em andamento (nunca clicou em "Continuar no
+// próximo ano"): ele continua aparecendo nos anos seguintes até hoje, mesmo
+// sem ter um registro próprio pra cada um deles.
+function edicoesAtivasNoAno(anoNum){
+  const grupos = projetosAgrupados();
+  const resultado = [];
+  grupos.forEach(cadeia=>{
+    let candidata = null, anoCandidata = -Infinity;
+    cadeia.forEach(p=>{
+      const anoP = Store.getAno(p.anoId)?.ano;
+      if(anoP===undefined || anoP > anoNum) return;
+      if(anoP > anoCandidata){ candidata = p; anoCandidata = anoP; }
+    });
+    if(!candidata) return; // essa cadeia só começa depois desse ano
+    // conta como ativo se for exatamente a edição daquele ano, ou se for uma
+    // edição de ano anterior que ainda está em andamento (e por isso não
+    // tinha uma edição mais nova pra ser escolhida acima)
+    if(anoCandidata === anoNum || candidata.emAndamento){
+      resultado.push(candidata);
+    }
+  });
+  return resultado;
+}
+
 function renderAnos(){
   document.querySelector('#tblAnos tbody').innerHTML = Store.data.anos.map(a=>{
-    const numProjetos = Store.projetosDoAno(a.id).length;
     const numGeral = Store.data.ganhos.filter(g=>g.anoId===a.id && !g.projetoId).length;
     const ativo = a.id === ctx.anoId;
-    return `<tr>
+    const edicoes = edicoesAtivasNoAno(a.ano);
+    const aberto = anosProjetosAbertos.has(a.id);
+
+    const linhaAno = `<tr class="grupo-row" data-action="toggle-projetos-do-ano" data-ano="${a.id}">
       <td class="mono">${a.ano} ${ativo?'<span class="badge mensal">selecionado</span>':''}</td>
-      <td>${numProjetos} projeto(s)</td>
+      <td><span class="chevron ${aberto?'open':''}">▸</span>${edicoes.length} projeto(s) ${edicoes.length ? '— clique pra ' + (aberto?'fechar':'ver') : ''}</td>
       <td>${numGeral} lançamento(s)</td>
       <td class="row-actions">
         ${ativo ? '' : `<button class="icon-btn" data-action="selecionar-ano" data-id="${a.id}">Selecionar</button>`}
         <button class="icon-btn danger" data-action="remover-ano" data-id="${a.id}">Excluir</button>
       </td>
     </tr>`;
+
+    if(!aberto || edicoes.length===0) return linhaAno;
+
+    const linhasProjetos = edicoes.map(p=>{
+      const anoDaEdicao = Store.getAno(p.anoId)?.ano;
+      const criadoEmOutroAno = anoDaEdicao !== a.ano;
+      return `<tr class="sub-row">
+        <td colspan="2">
+          <span class="color-dot" style="background:${p.cor}"></span>
+          <button class="link-btn" data-action="abrir-projeto-do-ano" data-id="${p.id}">${escapeHtml(p.nome)}</button>
+          ${tipoProjetoBadge(p)}
+          ${criadoEmOutroAno ? `<span class="muted small">— criado em ${anoDaEdicao}, ainda em andamento</span>` : ''}
+        </td>
+        <td class="mono small">${periodoProjetoLabel(p)}</td>
+        <td></td>
+      </tr>`;
+    }).join('');
+    return linhaAno + linhasProjetos;
   }).join('') || `<tr><td colspan="4" class="empty-hint">Nenhum ano criado ainda.</td></tr>`;
 
   const semAno = !ctx.anoId;
@@ -1121,6 +1168,39 @@ el('colabAno').addEventListener('change', e=>{
 // ---------------------------------------------------------------------------
 
 document.querySelector('#page-anos').addEventListener('click', e=>{
+  const linhaAno = e.target.closest('tr[data-action="toggle-projetos-do-ano"]');
+  if(linhaAno){
+    const anoId = linhaAno.dataset.ano;
+    if(anosProjetosAbertos.has(anoId)) anosProjetosAbertos.delete(anoId);
+    else anosProjetosAbertos.add(anoId);
+    renderAnos();
+    return;
+  }
+  const linkProjeto = e.target.closest('button[data-action="abrir-projeto-do-ano"]');
+  if(linkProjeto){
+    const p = Store.getProjeto(linkProjeto.dataset.id);
+    if(!p) return;
+    // leva pra aba Projetos já no ano real desse projeto (o ano onde o
+    // registro dele de fato existe, que pode ser diferente do ano que
+    // estava sendo navegado na aba Anos).
+    ctx.anoId = p.anoId;
+    Store.setAnoAtivo(p.anoId);
+    // se esse projeto faz parte de uma cadeia de renovação agrupada e
+    // colapsada, abre o grupo pra ele ficar visível na lista.
+    const grupos = projetosAgrupados();
+    const cadeia = grupos.find(c => c.some(x=>x.id===p.id));
+    if(cadeia && cadeia.length > 1) projetosGruposAbertos.add(cadeia[0].id);
+    setPage('projetos');
+    requestAnimationFrame(()=>{
+      const linhaDestacada = document.querySelector(`[data-action="abrir-projeto"][data-id="${p.id}"]`)?.closest('tr');
+      if(linhaDestacada){
+        linhaDestacada.scrollIntoView({ behavior:'smooth', block:'center' });
+        linhaDestacada.classList.add('linha-destacada');
+        setTimeout(()=>linhaDestacada.classList.remove('linha-destacada'), 2000);
+      }
+    });
+    return;
+  }
   const btn = e.target.closest('button[data-action]');
   if(!btn) return;
   const { action, id } = btn.dataset;

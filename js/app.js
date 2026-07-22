@@ -192,7 +192,16 @@ function renderDashboard(){
   if(semAno){
     tbody.innerHTML = `<tr><td colspan="5" class="empty-hint">Nenhum ano selecionado.</td></tr>`;
   }else{
-    const projetosDoAno = edicoesAtivasNoAno(anoObj.ano);
+    // Usa as edições "ativas" nesse ano (não só as com anoId exatamente igual)
+    // — assim um projeto em andamento continua aparecendo nos anos seguintes
+    // mesmo que o "Início" dele tenha sido editado pra um ano anterior depois
+    // de já ter dados lançados aqui. Quando um mês específico está selecionado
+    // (não "Ano todo"), filtra de novo pelo mês — um projeto que só começou
+    // em março não deve aparecer em janeiro/fevereiro daquele mesmo ano.
+    const projetosDoAnoBruto = edicoesAtivasNoAno(anoObj.ano);
+    const projetosDoAno = ehAnoTodo
+      ? projetosDoAnoBruto
+      : projetosDoAnoBruto.filter(p => projetoAtivoNoMes(p, anoObj.ano, ctx.mes));
     const linhas = projetosDoAno.map(p=>({
       nome: p.nome, cor: p.cor,
       ehCultura: (p.tipo||'impacto')==='cultura',

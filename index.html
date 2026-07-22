@@ -441,9 +441,15 @@
           <h2 style="margin-bottom:0;">Membros envolvidos</h2>
           <button class="ghost-btn" id="btnCopiarMesAnteriorProjeto">Copiar % do mês anterior</button>
         </div>
-        <div class="ctx-group" style="margin-bottom:12px;">
-          <label style="font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-faint); font-weight:700;">Mês</label>
-          <div class="month-tabs" id="detMeses"></div>
+        <div class="toolbar-row" style="margin-bottom:12px; gap:20px; flex-wrap:wrap;">
+          <div class="ctx-group">
+            <label style="font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-faint); font-weight:700;">Ano</label>
+            <select id="detAno"></select>
+          </div>
+          <div class="ctx-group">
+            <label style="font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-faint); font-weight:700;">Mês</label>
+            <div class="month-tabs" id="detMeses"></div>
+          </div>
         </div>
         <p class="muted small" id="membrosInfo" style="margin-bottom:12px;"></p>
         <div class="table-scroll">

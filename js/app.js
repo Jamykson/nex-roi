@@ -684,9 +684,22 @@ function tipoProjetoBadge(p){
 // e não o ano que está selecionado no momento na barra de contexto.
 // Isso é o que permite listar projetos de anos diferentes juntos, cada um
 // com os números certos.
+// Pra mostrar um resumo rápido na lista de Projetos: se o projeto está em
+// andamento, usa o ANO REAL de hoje (é o que interessa pra "como ele está
+// agora"), mesmo que o registro dele tenha ficado com um "Início" de um ano
+// anterior (por edição). Se já terminou, só o ano dele mesmo faz sentido.
+function anoParaResumoRapido(p){
+  if(p.emAndamento){
+    const anoRealObj = Store.getAnoPorNumero(new Date().getFullYear());
+    if(anoRealObj) return anoRealObj.id;
+  }
+  return p.anoId;
+}
+
 function metricaProjeto(fn, projeto){
-  if(ctx.mes === 'ano') return Store.agregarAno(projeto.anoId, projeto.id, fn);
-  return fn.call(Store, projeto.anoId, ctx.mes, projeto.id);
+  const anoId = anoParaResumoRapido(projeto);
+  if(ctx.mes === 'ano') return Store.agregarAno(anoId, projeto.id, fn);
+  return fn.call(Store, anoId, ctx.mes, projeto.id);
 }
 
 // Agrupa Store.data.projetos em "cadeias": cada cadeia é um array com todas as
@@ -780,7 +793,8 @@ function renderProjetos(){
 // indentado=true quando está dentro de um grupo expandido (visual recuado).
 function linhaProjeto(p, indentado){
   const anoObj = Store.getAno(p.anoId);
-  const membros = mes => Store.colaboradoresNoMes(p.anoId, mes, p.id).totalColaboradores;
+  const anoParaMembros = anoParaResumoRapido(p);
+  const membros = mes => Store.colaboradoresNoMes(anoParaMembros, mes, p.id).totalColaboradores;
   const numMembros = ctx.mes==='ano' ? membros(new Date().getMonth()+1) : membros(ctx.mes);
   const gasto = metricaProjeto(Store.gastoTotal, p);
   const ganho = metricaProjeto(Store.ganho, p);
@@ -807,7 +821,22 @@ function linhaProjeto(p, indentado){
 function renderProjetoDetalhe(){
   const projeto = Store.getProjeto(projetoDetalheId);
   if(!projeto){ setPage('projetos'); return; }
-  const ano = Store.getAno(projeto.anoId);
+
+  // Garante que sempre há um ano válido selecionado — por padrão, o que já
+  // estava ativo (ou o ano "de origem" do projeto, se não houver nenhum
+  // ainda relevante) — mas o usuário pode trocar livremente pelo seletor
+  // pra qualquer ano em que esse projeto existiu.
+  const anoProjetoInicio = Store.getAno(projeto.anoId)?.ano;
+  const anosDisponiveis = Store.data.anos.filter(a => anoProjetoInicio===undefined || a.ano >= anoProjetoInicio);
+  if(!ctx.anoId || !anosDisponiveis.some(a=>a.id===ctx.anoId)){
+    ctx.anoId = projeto.anoId;
+    Store.setAnoAtivo(ctx.anoId);
+  }
+  const selAno = el('detAno');
+  selAno.innerHTML = anosDisponiveis.map(a=>`<option value="${a.id}">${a.ano}</option>`).join('');
+  selAno.value = ctx.anoId;
+
+  const ano = Store.getAno(ctx.anoId);
 
   el('detalheAno').textContent = ano ? `Projeto · ${ano.ano}` : 'Projeto';
   el('detalheNomeProjeto').textContent = projeto.nome;
@@ -863,8 +892,8 @@ function renderMembrosProjeto(projeto){
     emptyHint.hidden = true;
     return;
   }
-  const anoProjeto = Store.getAno(projeto.anoId)?.ano;
-  if(!projetoAtivoNoMes(projeto, anoProjeto, ctx.mes)){
+  const anoVisualizado = Store.getAno(ctx.anoId)?.ano;
+  if(!projetoAtivoNoMes(projeto, anoVisualizado, ctx.mes)){
     const fimProjeto = projeto.emAndamento ? 12 : (projeto.mesFim || 12);
     info.textContent = `"${projeto.nome}" não estava ativo em ${MESES_LONGO[ctx.mes-1]} (período do projeto: ${MESES[(projeto.mesInicio||1)-1]} → ${projeto.emAndamento ? 'em andamento' : MESES[fimProjeto-1]}).`;
     tbody.innerHTML = '';
@@ -1156,6 +1185,12 @@ el('ctxProjeto').addEventListener('change', e=>{
 });
 
 el('btnVoltarProjetos').addEventListener('click', ()=>{ setPage('projetos'); });
+
+el('detAno').addEventListener('change', e=>{
+  ctx.anoId = e.target.value || null;
+  Store.setAnoAtivo(ctx.anoId);
+  renderProjetoDetalhe();
+});
 
 el('btnRenovarProjeto').addEventListener('click', ()=>{
   const res = Store.renovarProjeto(projetoDetalheId);

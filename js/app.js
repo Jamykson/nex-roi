@@ -192,7 +192,7 @@ function renderDashboard(){
   if(semAno){
     tbody.innerHTML = `<tr><td colspan="5" class="empty-hint">Nenhum ano selecionado.</td></tr>`;
   }else{
-    const projetosDoAno = Store.projetosDoAno(ctx.anoId);
+    const projetosDoAno = edicoesAtivasNoAno(anoObj.ano);
     const linhas = projetosDoAno.map(p=>({
       nome: p.nome, cor: p.cor,
       ehCultura: (p.tipo||'impacto')==='cultura',
@@ -472,6 +472,18 @@ function renderChartRoiMensal(){
 // num ano anterior e ainda em andamento (nunca clicou em "Continuar no
 // próximo ano"): ele continua aparecendo nos anos seguintes até hoje, mesmo
 // sem ter um registro próprio pra cada um deles.
+function projetoAtivoNoMes(p, anoNum, mes){
+  const anoInicio = Store.getAno(p.anoId)?.ano;
+  if(anoInicio===undefined) return false;
+  if(anoNum < anoInicio) return false;
+  if(anoNum === anoInicio && mes < (p.mesInicio||1)) return false;
+  if(!p.emAndamento){
+    if(anoNum > anoInicio) return false;
+    if(anoNum === anoInicio && mes > (p.mesFim||12)) return false;
+  }
+  return true;
+}
+
 function edicoesAtivasNoAno(anoNum){
   const grupos = projetosAgrupados();
   const resultado = [];
@@ -842,8 +854,9 @@ function renderMembrosProjeto(projeto){
     emptyHint.hidden = true;
     return;
   }
-  const fimProjeto = projeto.emAndamento ? 12 : (projeto.mesFim || 12);
-  if(ctx.mes < (projeto.mesInicio||1) || ctx.mes > fimProjeto){
+  const anoProjeto = Store.getAno(projeto.anoId)?.ano;
+  if(!projetoAtivoNoMes(projeto, anoProjeto, ctx.mes)){
+    const fimProjeto = projeto.emAndamento ? 12 : (projeto.mesFim || 12);
     info.textContent = `"${projeto.nome}" não estava ativo em ${MESES_LONGO[ctx.mes-1]} (período do projeto: ${MESES[(projeto.mesInicio||1)-1]} → ${projeto.emAndamento ? 'em andamento' : MESES[fimProjeto-1]}).`;
     tbody.innerHTML = '';
     emptyHint.hidden = true;
@@ -1061,7 +1074,7 @@ function renderColaboradorDetalhe(){
     return;
   }
 
-  const projetosDoAno = Store.projetosDoAno(ctx.anoId);
+  const projetosDoAno = edicoesAtivasNoAno(anoObj.ano);
   if(projetosDoAno.length===0){
     tbody.innerHTML = '';
     emptyHint.hidden = false;
@@ -1070,10 +1083,7 @@ function renderColaboradorDetalhe(){
   }
   // só mostra projetos que já tinham começado (e ainda não tinham terminado)
   // no mês selecionado — evita alocar colaborador antes do projeto existir.
-  const projetos = projetosDoAno.filter(p=>{
-    const fim = p.emAndamento ? 12 : (p.mesFim || 12);
-    return ctx.mes >= (p.mesInicio||1) && ctx.mes <= fim;
-  });
+  const projetos = projetosDoAno.filter(p => projetoAtivoNoMes(p, anoObj.ano, ctx.mes));
   if(projetos.length===0){
     tbody.innerHTML = '';
     emptyHint.hidden = false;

@@ -2079,8 +2079,8 @@ el('btnExportExcel').addEventListener('click', async ()=>{
 // ---------------------------------------------------------------------------
 // Início
 // ---------------------------------------------------------------------------
-(function init(){
-  Store.load();
+(async function init(){
+  await Store.load();
   ctx.anoId = Store.data.activeAnoId;
   el('storageWarning').hidden = Store._storageOk;
   setPage('dashboard');

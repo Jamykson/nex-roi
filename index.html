@@ -48,7 +48,7 @@
     </nav>
 
     <div class="sidebar-foot">
-      <p class="storage-warning" id="storageWarning" hidden>⚠ Modo sessão: os dados não serão salvos ao recarregar a página (armazenamento local indisponível neste ambiente).</p>
+      <p class="storage-warning" id="storageWarning" hidden>⚠ Não foi possível conectar ao banco de dados. Os números na tela podem estar incompletos ou desatualizados — recarregue a página.</p>
       <button id="btnExport" class="ghost-btn" title="Baixar backup dos dados (.json)">
         <svg class="icon" viewBox="0 0 20 20" style="width:14px;height:14px"><path d="M10 3v9M6.5 9l3.5 3.5L13.5 9"/><path d="M4 15.5h12"/></svg>
         Exportar dados
@@ -554,6 +554,7 @@
 
 <script src="js/chart.umd.min.js"></script>
 <script src="js/exceljs.min.js"></script>
+<script src="js/supabase.min.js"></script>
 <script src="js/store.js"></script>
 <script src="js/app.js"></script>
 </body>

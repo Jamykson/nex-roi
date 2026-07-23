@@ -1,92 +1,199 @@
 /* ==========================================================================
    store.js
-   Camada de dados: persistência (localStorage) + regras de cálculo.
-   Nenhuma manipulação de DOM acontece aqui — só dados.
+   Camada de dados: agora fala com o Supabase (banco compartilhado, sem
+   login) em vez do localStorage. Nenhuma manipulação de DOM acontece aqui.
+
+   COMO FUNCIONA:
+   - Store.data é uma cópia em memória de tudo, carregada uma vez no início
+     (Store.load(), que é assíncrona) — é nela que o resto do app lê e
+     escreve, então tudo continua rápido e síncrono como antes.
+   - Toda função que CRIA/EDITA/REMOVE algo faz duas coisas: (1) atualiza
+     Store.data na hora, pra tela responder instantaneamente; e (2) dispara,
+     em segundo plano, a chamada correspondente ao Supabase pra persistir de
+     verdade. Se essa chamada falhar (sem internet, etc.), aparece um toast
+     avisando — mas a tela já tinha atualizado, então é bom recarregar a
+     página se isso acontecer, pra garantir que ficou tudo sincronizado.
+   - Isso significa que os dados são COMPARTILHADOS: qualquer pessoa que
+     abrir o site vê (e pode editar) os mesmos dados que todo mundo.
    ========================================================================== */
 
-const STORAGE_KEY = 'roi_dashboard_v1';
+// ---------------------------------------------------------------------------
+// CONFIGURAÇÃO — cole aqui a URL e a chave "anon public" do seu projeto
+// Supabase (em Project Settings → API).
+// ---------------------------------------------------------------------------
+const SUPABASE_URL = 'https://afhznrrpowqxmyhmsclq.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmaHpucnJwb3dxeG15aG1zY2xxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3MzM0MjksImV4cCI6MjEwMDMwOTQyOX0.s-pF26RQ4cZHwMNnhnC_LITPpq_J0cMQDJt0_j4Kk3k';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const MESES_LONGO = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 const PROJECT_COLORS = ['#2C6E8F','#B5762B','#5B7A3A','#8A4B7A','#3A6B6B','#A2472F','#5A5FA6','#7A8A2C'];
-const ANO_BASE = 2020; // desde quando os anos existem por padrão (época do primeiro projeto)
+const ANO_BASE = 2020;
 
 function uid(){
   return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+}
+
+function avisarErro(acao, err){
+  console.error(`Erro ao ${acao}:`, err);
+  if(typeof toast === 'function'){
+    toast(`Não foi possível ${acao}. Verifique sua internet e recarregue a página.`);
+  }
 }
 
 function defaultData(){
   return {
     anos: [],
     colaboradores: [],
-    cargos: [],        // {id, nome, salario}
+    cargos: [],
     projetos: [],
-    alocacoes: [],     // {id, anoId, mes, colaboradorId, projetoId, percentual}
-    salariosPontuais: [], // {id, colaboradorId, anoId, mes, valor} — sobrescreve custoMensal só naquele mês
-    mudancasCargo: [],    // {id, colaboradorId, anoId, mes, cargo} — cargo passa a valer a PARTIR daquele mês
-    ganhos: [],        // {id, anoId, projetoId|null, tipo, mesInicio, mesFim, descricao, valor}
-    gastosExtras: [],  // idem ganhos
+    alocacoes: [],
+    salariosPontuais: [],
+    mudancasCargo: [],
+    ganhos: [],
+    gastosExtras: [],
     activeAnoId: null
   };
+}
+
+// ---------------------------------------------------------------------------
+// Conversão entre as colunas do banco (snake_case) e os objetos que o app
+// usa (camelCase).
+// ---------------------------------------------------------------------------
+function anoFromRow(r){ return { id:r.id, ano:r.ano }; }
+function anoToRow(a){ return { id:a.id, ano:a.ano }; }
+
+function cargoFromRow(r){ return { id:r.id, nome:r.nome, salario:Number(r.salario) }; }
+function cargoToRow(c){ return { id:c.id, nome:c.nome, salario:c.salario }; }
+
+function colaboradorFromRow(r){
+  return {
+    id:r.id, nome:r.nome, cargo:r.cargo, custoMensal:Number(r.custo_mensal),
+    entradaAnoId:r.entrada_ano_id, entradaMes:r.entrada_mes,
+    ativo:r.ativo, saidaAnoId:r.saida_ano_id, saidaMes:r.saida_mes
+  };
+}
+function colaboradorToRow(c){
+  return {
+    id:c.id, nome:c.nome, cargo:c.cargo, custo_mensal:c.custoMensal,
+    entrada_ano_id:c.entradaAnoId||null, entrada_mes:c.entradaMes,
+    ativo:c.ativo, saida_ano_id:c.saidaAnoId||null, saida_mes:c.saidaMes
+  };
+}
+
+function projetoFromRow(r){
+  const p = {
+    id:r.id, nome:r.nome, anoId:r.ano_id, cor:r.cor, mesInicio:r.mes_inicio,
+    emAndamento:r.em_andamento, mesFim:r.mes_fim, tipo:r.tipo
+  };
+  if(r.renovado_de_id) p.renovadoDeId = r.renovado_de_id;
+  if(r.renovado_para_id) p.renovadoParaId = r.renovado_para_id;
+  return p;
+}
+function projetoToRow(p){
+  return {
+    id:p.id, nome:p.nome, ano_id:p.anoId, cor:p.cor, mes_inicio:p.mesInicio,
+    em_andamento:p.emAndamento, mes_fim:p.mesFim, tipo:p.tipo,
+    renovado_de_id:p.renovadoDeId||null, renovado_para_id:p.renovadoParaId||null
+  };
+}
+
+function alocacaoFromRow(r){
+  return { id:r.id, anoId:r.ano_id, mes:r.mes, colaboradorId:r.colaborador_id, projetoId:r.projeto_id, percentual:Number(r.percentual) };
+}
+function alocacaoToRow(a){
+  return { id:a.id, ano_id:a.anoId, mes:a.mes, colaborador_id:a.colaboradorId, projeto_id:a.projetoId, percentual:a.percentual };
+}
+
+function salarioPontualFromRow(r){
+  return { id:r.id, colaboradorId:r.colaborador_id, anoId:r.ano_id, mes:r.mes, valor:Number(r.valor) };
+}
+function salarioPontualToRow(s){
+  return { id:s.id, colaborador_id:s.colaboradorId, ano_id:s.anoId, mes:s.mes, valor:s.valor };
+}
+
+function mudancaCargoFromRow(r){
+  return { id:r.id, colaboradorId:r.colaborador_id, anoId:r.ano_id, mes:r.mes, cargo:r.cargo, salario: (r.salario===null||r.salario===undefined) ? null : Number(r.salario) };
+}
+function mudancaCargoToRow(m){
+  return { id:m.id, colaborador_id:m.colaboradorId, ano_id:m.anoId, mes:m.mes, cargo:m.cargo, salario:m.salario };
+}
+
+function lancamentoFromRow(r){
+  return { id:r.id, anoId:r.ano_id, projetoId:r.projeto_id||null, tipo:r.tipo, mesInicio:r.mes_inicio, mesFim:r.mes_fim, descricao:r.descricao||'', valor:Number(r.valor) };
+}
+function lancamentoToRow(l){
+  return { id:l.id, ano_id:l.anoId, projeto_id:l.projetoId||null, tipo:l.tipo, mes_inicio:l.mesInicio, mes_fim:l.mesFim, descricao:l.descricao||'', valor:l.valor };
 }
 
 const Store = {
   data: null,
   _storageOk: true,
 
-  load(){
+  async load(){
+    this.data = defaultData();
     try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      // testa escrita de verdade — alguns ambientes (ex.: preview de artefato)
-      // permitem leitura mas bloqueiam escrita, e só descobriríamos isso depois
-      const probeKey = STORAGE_KEY + '__probe__';
-      localStorage.setItem(probeKey, '1');
-      localStorage.removeItem(probeKey);
-      this.data = raw ? JSON.parse(raw) : defaultData();
+      const [anosR, cargosR, colabR, projR, alocR, salPontR, mudCargoR, ganhosR, gastosR] = await Promise.all([
+        sb.from('anos').select('*'),
+        sb.from('cargos').select('*'),
+        sb.from('colaboradores').select('*'),
+        sb.from('projetos').select('*'),
+        sb.from('alocacoes').select('*'),
+        sb.from('salarios_pontuais').select('*'),
+        sb.from('mudancas_cargo').select('*'),
+        sb.from('ganhos').select('*'),
+        sb.from('gastos_extras').select('*'),
+      ]);
+      const primeiroErro = [anosR, cargosR, colabR, projR, alocR, salPontR, mudCargoR, ganhosR, gastosR].find(r=>r.error);
+      if(primeiroErro) throw primeiroErro.error;
+
+      this.data.anos = anosR.data.map(anoFromRow).sort((a,b)=>a.ano-b.ano);
+      this.data.cargos = cargosR.data.map(cargoFromRow).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+      this.data.colaboradores = colabR.data.map(colaboradorFromRow);
+      this.data.projetos = projR.data.map(projetoFromRow);
+      this.data.alocacoes = alocR.data.map(alocacaoFromRow);
+      this.data.salariosPontuais = salPontR.data.map(salarioPontualFromRow);
+      this.data.mudancasCargo = mudCargoR.data.map(mudancaCargoFromRow);
+      this.data.ganhos = ganhosR.data.map(lancamentoFromRow);
+      this.data.gastosExtras = gastosR.data.map(lancamentoFromRow);
       this._storageOk = true;
     }catch(e){
-      console.warn('localStorage indisponível neste ambiente — os dados vão funcionar só durante esta sessão.', e);
+      console.error('Não foi possível carregar os dados do Supabase.', e);
       this._storageOk = false;
-      this.data = defaultData();
     }
 
-    /// saneamento: garante todas as chaves existem (útil após updates do app)
-    const base = defaultData();
-    for(const k in base){
-      if(!(k in this.data)) this.data[k] = base[k];
+    await this.garantirAnosPadrao();
+
+    const anoAtualNum = new Date().getFullYear();
+    let ativoSalvo = null;
+    try{ ativoSalvo = localStorage.getItem('roi_ano_ativo_local'); }catch(e){}
+    if(ativoSalvo && this.data.anos.some(a=>a.id===ativoSalvo)){
+      this.data.activeAnoId = ativoSalvo;
+    }else{
+      const atual = this.data.anos.find(a=>a.ano===anoAtualNum);
+      this.data.activeAnoId = (atual || this.data.anos[this.data.anos.length-1])?.id || null;
     }
-    this.garantirAnosPadrao();
     return this.data;
   },
 
-  // Garante que os anos de ANO_BASE até o ano civil atual sempre existam.
-  // Isso substitui a criação "digitou, criou": os anos existem numa faixa fixa,
-  // e um ano novo só aparece quando o calendário realmente vira (ex.: 2027).
-  garantirAnosPadrao(){
+  async garantirAnosPadrao(){
     const anoAtual = new Date().getFullYear();
+    const faltantes = [];
     for(let a = ANO_BASE; a <= anoAtual; a++){
       if(!this.data.anos.some(x=>x.ano===a)){
-        this.data.anos.push({ id: uid(), ano: a });
+        const novo = { id: uid(), ano: a };
+        this.data.anos.push(novo);
+        faltantes.push(novo);
       }
     }
     this.data.anos.sort((a,b)=>a.ano-b.ano);
-    if(!this.data.activeAnoId){
-      const atual = this.data.anos.find(a=>a.ano===anoAtual);
-      this.data.activeAnoId = (atual || this.data.anos[this.data.anos.length-1])?.id || null;
-    }
-  },
-
-  // Nunca deixa uma falha de armazenamento (ex.: localStorage bloqueado dentro de
-  // um preview de artefato) interromper o restante do código que chamou save() —
-  // isso já causou telas que "não atualizavam" depois de cadastrar algo.
-  save(){
-    try{
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
-      this._storageOk = true;
-    }catch(e){
-      if(this._storageOk) console.warn('Não foi possível salvar (localStorage indisponível). Os dados continuam funcionando nesta sessão, mas não persistem após recarregar a página.', e);
-      this._storageOk = false;
+    if(faltantes.length){
+      try{
+        const { error } = await sb.from('anos').insert(faltantes.map(anoToRow));
+        if(error) throw error;
+      }catch(e){ avisarErro('criar os anos padrão', e); }
     }
   },
 
@@ -94,10 +201,30 @@ const Store = {
     return JSON.stringify(this.data, null, 2);
   },
 
-  importJSON(json){
+  async importJSON(json){
     const parsed = JSON.parse(json);
-    this.data = parsed;
-    this.save();
+    const tabelas = ['gastos_extras','ganhos','mudancas_cargo','salarios_pontuais','alocacoes','projetos','colaboradores','cargos','anos'];
+    for(const t of tabelas){
+      const { error } = await sb.from(t).delete().not('id', 'is', null);
+      if(error) throw error;
+    }
+    const ordem = [
+      ['anos', parsed.anos||[], anoToRow],
+      ['cargos', parsed.cargos||[], cargoToRow],
+      ['colaboradores', parsed.colaboradores||[], colaboradorToRow],
+      ['projetos', parsed.projetos||[], projetoToRow],
+      ['alocacoes', parsed.alocacoes||[], alocacaoToRow],
+      ['salarios_pontuais', parsed.salariosPontuais||[], salarioPontualToRow],
+      ['mudancas_cargo', parsed.mudancasCargo||[], mudancaCargoToRow],
+      ['ganhos', parsed.ganhos||[], lancamentoToRow],
+      ['gastos_extras', parsed.gastosExtras||[], lancamentoToRow],
+    ];
+    for(const [tabela, linhas, toRow] of ordem){
+      if(linhas.length===0) continue;
+      const { error } = await sb.from(tabela).insert(linhas.map(toRow));
+      if(error) throw error;
+    }
+    await this.load();
   },
 
   // ---------------- Anos ----------------
@@ -108,17 +235,15 @@ const Store = {
     this.data.anos.push(novo);
     this.data.anos.sort((a,b)=>a.ano-b.ano);
     if(!this.data.activeAnoId) this.data.activeAnoId = novo.id;
-    this.save();
+    sb.from('anos').insert(anoToRow(novo)).then(({error})=>{ if(error) avisarErro('criar o ano', error); });
     return { ok:true, ano: novo };
   },
 
-  // Acha o ano pelo número (usado internamente; anos agora vêm de garantirAnosPadrao)
   getAnoPorNumero(anoNum){
     return this.data.anos.find(a=>a.ano===parseInt(anoNum,10));
   },
 
   removerAno(anoId){
-    const projetosDoAno = this.data.projetos.filter(p=>p.anoId===anoId).map(p=>p.id);
     this.data.anos = this.data.anos.filter(a=>a.id!==anoId);
     this.data.projetos = this.data.projetos.filter(p=>p.anoId!==anoId);
     this.data.alocacoes = this.data.alocacoes.filter(a=>a.anoId!==anoId);
@@ -127,7 +252,7 @@ const Store = {
     if(this.data.activeAnoId===anoId){
       this.data.activeAnoId = this.data.anos[0]?.id || null;
     }
-    this.save();
+    sb.from('anos').delete().eq('id', anoId).then(({error})=>{ if(error) avisarErro('excluir o ano', error); });
   },
 
   getAno(id){ return this.data.anos.find(a=>a.id===id); },
@@ -135,10 +260,10 @@ const Store = {
 
   setAnoAtivo(id){
     this.data.activeAnoId = id;
-    this.save();
+    try{ localStorage.setItem('roi_ano_ativo_local', id || ''); }catch(e){}
   },
 
-  // ---------------- Cargos (catálogo de opções pra Colaboradores) ----------------
+  // ---------------- Cargos ----------------
   criarCargo(nome, salario){
     nome = (nome||'').trim();
     if(!nome) return { ok:false, msg:'Informe o nome do cargo.' };
@@ -148,7 +273,7 @@ const Store = {
     const novo = { id: uid(), nome, salario: parseFloat(salario) || 0 };
     this.data.cargos.push(novo);
     this.data.cargos.sort((a,b)=>a.nome.localeCompare(b.nome, 'pt-BR'));
-    this.save();
+    sb.from('cargos').insert(cargoToRow(novo)).then(({error})=>{ if(error) avisarErro('criar o cargo', error); });
     return { ok:true, cargo: novo };
   },
 
@@ -158,27 +283,21 @@ const Store = {
     const c = this.data.cargos.find(x=>x.id===id);
     if(c){ c.nome = nome; c.salario = salario; }
     this.data.cargos.sort((a,b)=>a.nome.localeCompare(b.nome, 'pt-BR'));
-    this.save();
+    sb.from('cargos').update({ nome, salario }).eq('id', id).then(({error})=>{ if(error) avisarErro('salvar o cargo', error); });
   },
 
   removerCargo(id){
     this.data.cargos = this.data.cargos.filter(c=>c.id!==id);
-    this.save();
+    sb.from('cargos').delete().eq('id', id).then(({error})=>{ if(error) avisarErro('remover o cargo', error); });
   },
 
   getCargo(id){ return this.data.cargos.find(c=>c.id===id); },
 
-  // Quantos colaboradores usam este cargo hoje (pelo nome, já que o colaborador
-  // guarda o nome do cargo copiado, não uma referência viva ao cadastro).
   colaboradoresPorCargo(nomeCargo){
     return this.data.colaboradores.filter(c => c.cargo === nomeCargo).length;
   },
 
   // ---------------- Colaboradores ----------------
-  // entradaAnoId/entradaMes são opcionais — colaborador sem data de entrada
-  // cadastrada não tem restrição nenhuma (retrocompatível com quem já existia).
-  // ativo/saidaAnoId/saidaMes seguem o mesmo padrão do "Em andamento" dos
-  // projetos: ativo=true (padrão) não tem saída; ativo=false guarda quando saiu.
   salvarColaborador({id, nome, cargo, custoMensal, entradaAnoId, entradaMes, ativo, saidaAnoId, saidaMes}){
     custoMensal = parseFloat(custoMensal) || 0;
     entradaAnoId = entradaAnoId || null;
@@ -186,22 +305,24 @@ const Store = {
     ativo = ativo !== false;
     saidaAnoId = ativo ? null : (saidaAnoId || null);
     saidaMes = (!ativo && saidaAnoId) ? (parseInt(saidaMes,10) || 12) : null;
+    let registro;
     if(id){
       const c = this.data.colaboradores.find(x=>x.id===id);
       if(c){
         c.nome=nome; c.cargo=cargo; c.custoMensal=custoMensal;
         c.entradaAnoId=entradaAnoId; c.entradaMes=entradaMes;
         c.ativo=ativo; c.saidaAnoId=saidaAnoId; c.saidaMes=saidaMes;
+        registro = c;
       }
     }else{
-      this.data.colaboradores.push({ id: uid(), nome, cargo, custoMensal, entradaAnoId, entradaMes, ativo, saidaAnoId, saidaMes });
+      registro = { id: uid(), nome, cargo, custoMensal, entradaAnoId, entradaMes, ativo, saidaAnoId, saidaMes };
+      this.data.colaboradores.push(registro);
     }
-    this.save();
+    if(registro){
+      sb.from('colaboradores').upsert(colaboradorToRow(registro)).then(({error})=>{ if(error) avisarErro('salvar o colaborador', error); });
+    }
   },
 
-  // Diz se um colaborador já tinha SAÍDO da empresa num determinado (ano, mês).
-  // O mês de saída em si ainda conta como ativo (a pessoa trabalhou até ali);
-  // "já saiu" só passa a valer a partir do mês seguinte.
   colaboradorJaSaiu(colaborador, anoNum, mes){
     if(colaborador.ativo !== false) return false;
     if(!colaborador.saidaAnoId) return false;
@@ -211,9 +332,6 @@ const Store = {
     return mes > (colaborador.saidaMes || 12);
   },
 
-  // Diz se um colaborador já tinha entrado na empresa num determinado (ano, mês).
-  // Compara pelo NÚMERO do ano (não pelo anoId), pra funcionar mesmo quando o
-  // período consultado é de um "Ano" cadastrado depois da data de entrada.
   colaboradorJaEntrou(colaborador, anoNum, mes){
     if(!colaborador.entradaAnoId) return true;
     const anoEntrada = this.getAno(colaborador.entradaAnoId);
@@ -227,11 +345,12 @@ const Store = {
     this.data.alocacoes = this.data.alocacoes.filter(a=>a.colaboradorId!==id);
     this.data.salariosPontuais = this.data.salariosPontuais.filter(s=>s.colaboradorId!==id);
     this.data.mudancasCargo = this.data.mudancasCargo.filter(m=>m.colaboradorId!==id);
-    this.save();
+    sb.from('colaboradores').delete().eq('id', id).then(({error})=>{ if(error) avisarErro('remover o colaborador', error); });
   },
 
-  // ---------------- Projetos (pertencem a um ano) ----------------
+  // ---------------- Projetos ----------------
   salvarProjeto({id, nome, anoId, mesInicio, mesFim, emAndamento, tipo}){
+    let registro;
     if(id){
       const p = this.data.projetos.find(x=>x.id===id);
       if(p){
@@ -241,25 +360,24 @@ const Store = {
         p.emAndamento = !!emAndamento;
         p.mesFim = p.emAndamento ? null : parseInt(mesFim,10);
         if(tipo) p.tipo = tipo;
+        registro = p;
       }
     }else{
       const cor = PROJECT_COLORS[this.data.projetos.length % PROJECT_COLORS.length];
-      this.data.projetos.push({
+      registro = {
         id: uid(), nome, anoId, cor,
         mesInicio: parseInt(mesInicio,10) || 1,
         emAndamento: !!emAndamento,
         mesFim: emAndamento ? null : (parseInt(mesFim,10) || 12),
         tipo: tipo || 'impacto'
-      });
+      };
+      this.data.projetos.push(registro);
     }
-    this.save();
+    if(registro){
+      sb.from('projetos').upsert(projetoToRow(registro)).then(({error})=>{ if(error) avisarErro('salvar o projeto', error); });
+    }
   },
 
-  // Cria uma cópia deste projeto no ano seguinte ("continuar no próximo ano").
-  // O projeto novo é independente: gasto/ganho/saldo começam do zero, sem
-  // herdar alocações ou lançamentos do projeto original — só nome, tipo e cor.
-  // Guarda o vínculo (renovadoDeId / renovadoParaId) pra exibir "continua em..."
-  // na tela e evitar renovar o mesmo projeto duas vezes.
   renovarProjeto(projetoId){
     const original = this.getProjeto(projetoId);
     if(!original) return { ok:false, msg:'Projeto não encontrado.' };
@@ -288,13 +406,13 @@ const Store = {
     };
     this.data.projetos.push(novo);
     original.renovadoParaId = novo.id;
-    this.save();
+
+    sb.from('projetos').insert(projetoToRow(novo)).then(({error})=>{ if(error) avisarErro('criar a continuação do projeto', error); });
+    sb.from('projetos').update({ renovado_para_id: novo.id }).eq('id', original.id).then(({error})=>{ if(error) avisarErro('atualizar o projeto original', error); });
+
     return { ok:true, projeto: novo };
   },
 
-  // Conta quantos registros (alocações + ganhos + gastos) um projeto tem
-  // dentro de um ano específico — usado pra avisar antes de "mover" o
-  // projeto pra outro ano, já que esses registros não se movem sozinhos.
   contarRegistrosDoProjetoNoAno(projetoId, anoId){
     return this.data.alocacoes.filter(a=>a.projetoId===projetoId && a.anoId===anoId).length
       + this.data.ganhos.filter(g=>g.projetoId===projetoId && g.anoId===anoId).length
@@ -315,7 +433,7 @@ const Store = {
     this.data.alocacoes = this.data.alocacoes.filter(a=>a.projetoId!==id);
     this.data.ganhos = this.data.ganhos.filter(g=>g.projetoId!==id);
     this.data.gastosExtras = this.data.gastosExtras.filter(g=>g.projetoId!==id);
-    this.save();
+    sb.from('projetos').delete().eq('id', id).then(({error})=>{ if(error) avisarErro('remover o projeto', error); });
   },
 
   // ---------------- Alocação mensal ----------------
@@ -328,21 +446,21 @@ const Store = {
     percentual = parseFloat(percentual);
     let reg = this.getAlocacao(anoId, mes, colaboradorId, projetoId);
     if(!percentual || percentual<=0){
-      if(reg) this.data.alocacoes = this.data.alocacoes.filter(a=>a!==reg);
-      this.save();
+      if(reg){
+        this.data.alocacoes = this.data.alocacoes.filter(a=>a!==reg);
+        sb.from('alocacoes').delete().eq('id', reg.id).then(({error})=>{ if(error) avisarErro('remover a alocação', error); });
+      }
       return { ok:true };
     }
-    // trava: a soma de % de um colaborador entre todos os projetos, no mesmo mês,
-    // nunca pode passar de 100% — senão o custo de folha calculado ultrapassaria
-    // o salário real da pessoa.
     const totalOutrosProjetos = this.totalAlocadoColaborador(anoId, mes, colaboradorId) - (reg ? reg.percentual : 0);
     if(totalOutrosProjetos + percentual > 100.001){
       const disponivel = Math.max(0, 100 - totalOutrosProjetos);
       return { ok:false, msg:`Isso passaria de 100%. Esse colaborador já tem ${totalOutrosProjetos}% em outros projetos neste mês (sobram ${disponivel}%).` };
     }
-    if(reg){ reg.percentual = percentual; }
-    else{ this.data.alocacoes.push({ id:uid(), anoId, mes, colaboradorId, projetoId, percentual }); }
-    this.save();
+    let registro;
+    if(reg){ reg.percentual = percentual; registro = reg; }
+    else{ registro = { id:uid(), anoId, mes, colaboradorId, projetoId, percentual }; this.data.alocacoes.push(registro); }
+    sb.from('alocacoes').upsert(alocacaoToRow(registro)).then(({error})=>{ if(error) avisarErro('salvar a alocação', error); });
     return { ok:true };
   },
 
@@ -361,31 +479,43 @@ const Store = {
     if(mesOrigem < 1) return { ok:false, msg:'Não há mês anterior dentro do ano.' };
     const origem = this.data.alocacoes.filter(a=>a.anoId===anoId && a.mes===mesOrigem && a.projetoId===projetoId);
     if(origem.length===0) return { ok:false, msg:'O mês anterior está vazio neste projeto.' };
+    const removidos = this.data.alocacoes.filter(a=>a.anoId===anoId && a.mes===mesDestino && a.projetoId===projetoId);
     this.data.alocacoes = this.data.alocacoes.filter(a=>!(a.anoId===anoId && a.mes===mesDestino && a.projetoId===projetoId));
-    origem.forEach(a=>{
-      this.data.alocacoes.push({ id:uid(), anoId, mes:mesDestino, colaboradorId:a.colaboradorId, projetoId, percentual:a.percentual });
-    });
-    this.save();
+    const novos = origem.map(a=>({ id:uid(), anoId, mes:mesDestino, colaboradorId:a.colaboradorId, projetoId, percentual:a.percentual }));
+    this.data.alocacoes.push(...novos);
+
+    (async ()=>{
+      try{
+        if(removidos.length) await sb.from('alocacoes').delete().in('id', removidos.map(r=>r.id));
+        if(novos.length) await sb.from('alocacoes').insert(novos.map(alocacaoToRow));
+      }catch(e){ avisarErro('copiar as alocações do mês anterior', e); }
+    })();
+
     return { ok:true };
   },
 
-  // Mesma ideia da função acima, mas espelhada: copia, de um colaborador
-  // específico, as % que ele tinha em CADA projeto no mês anterior.
   copiarAlocacaoColaboradorMesAnterior(anoId, colaboradorId, mesDestino){
     const mesOrigem = mesDestino - 1;
     if(mesOrigem < 1) return { ok:false, msg:'Não há mês anterior dentro do ano.' };
     const origem = this.data.alocacoes.filter(a=>a.anoId===anoId && a.mes===mesOrigem && a.colaboradorId===colaboradorId);
     if(origem.length===0) return { ok:false, msg:'O mês anterior está vazio para este colaborador.' };
+    const removidos = this.data.alocacoes.filter(a=>a.anoId===anoId && a.mes===mesDestino && a.colaboradorId===colaboradorId);
     this.data.alocacoes = this.data.alocacoes.filter(a=>!(a.anoId===anoId && a.mes===mesDestino && a.colaboradorId===colaboradorId));
-    origem.forEach(a=>{
-      this.data.alocacoes.push({ id:uid(), anoId, mes:mesDestino, colaboradorId, projetoId:a.projetoId, percentual:a.percentual });
-    });
-    this.save();
+    const novos = origem.map(a=>({ id:uid(), anoId, mes:mesDestino, colaboradorId, projetoId:a.projetoId, percentual:a.percentual }));
+    this.data.alocacoes.push(...novos);
+
+    (async ()=>{
+      try{
+        if(removidos.length) await sb.from('alocacoes').delete().in('id', removidos.map(r=>r.id));
+        if(novos.length) await sb.from('alocacoes').insert(novos.map(alocacaoToRow));
+      }catch(e){ avisarErro('copiar as alocações do mês anterior', e); }
+    })();
+
     return { ok:true };
   },
 
-  // ---------------- Ganhos / Gastos extras (mesma forma) ----------------
-  _salvarLancamento(colecao, campos){
+  // ---------------- Ganhos / Gastos extras ----------------
+  _salvarLancamento(colecao, tabela, campos){
     const { id, projetoId, tipo, mesInicio, mesFim, descricao, valor, anoId } = campos;
     const registro = {
       id: id || uid(),
@@ -403,7 +533,7 @@ const Store = {
     }else{
       this.data[colecao].push(registro);
     }
-    this.save();
+    sb.from(tabela).upsert(lancamentoToRow(registro)).then(({error})=>{ if(error) avisarErro('salvar o lançamento', error); });
     return registro;
   },
 
@@ -412,24 +542,24 @@ const Store = {
       const p = this.data.projetos.find(x=>x.id===campos.projetoId);
       if(p && p.tipo==='cultura') return { ok:false, msg:'Projetos de Cultura não têm ganhos — só gastos.' };
     }
-    return this._salvarLancamento('ganhos', campos);
+    return this._salvarLancamento('ganhos', 'ganhos', campos);
   },
-  salvarGastoExtra(campos){ return this._salvarLancamento('gastosExtras', campos); },
+  salvarGastoExtra(campos){ return this._salvarLancamento('gastosExtras', 'gastos_extras', campos); },
 
-  removerGanho(id){ this.data.ganhos = this.data.ganhos.filter(g=>g.id!==id); this.save(); },
-  removerGastoExtra(id){ this.data.gastosExtras = this.data.gastosExtras.filter(g=>g.id!==id); this.save(); },
+  removerGanho(id){
+    this.data.ganhos = this.data.ganhos.filter(g=>g.id!==id);
+    sb.from('ganhos').delete().eq('id', id).then(({error})=>{ if(error) avisarErro('remover o ganho', error); });
+  },
+  removerGastoExtra(id){
+    this.data.gastosExtras = this.data.gastosExtras.filter(g=>g.id!==id);
+    sb.from('gastos_extras').delete().eq('id', id).then(({error})=>{ if(error) avisarErro('remover o gasto', error); });
+  },
 
-  // Um lançamento (ganho/gasto) "acontece" no mês m se for pontual no mesmo mês,
-  // ou mensal dentro do intervalo [mesInicio, mesFim].
   _lancamentoAplicaNoMes(l, mes){
     if(l.tipo==='pontual') return l.mesInicio === mes;
     return mes >= l.mesInicio && mes <= l.mesFim;
   },
 
-  // Compara o projeto de um registro com um filtro:
-  //  - undefined ou 'ALL'  -> não filtra (considera todos os registros)
-  //  - null ou 'GERAL'     -> só registros sem projeto (gerais da empresa)
-  //  - um id                -> só registros daquele projeto
   _matchProjeto(valorProjetoId, filtro){
     if(filtro===undefined || filtro==='ALL') return true;
     if(filtro===null || filtro==='GERAL') return valorProjetoId===null;
@@ -444,10 +574,8 @@ const Store = {
       .reduce((s,l)=>s+l.valor, 0);
   },
 
-  // ---------------- Cálculos agregados ----------------
+  // ---------------- Cálculos agregados (tudo local, sem rede) ----------------
 
-  // Ajuste pontual de salário: sobrescreve custoMensal só num (ano, mês)
-  // específico — usado quando alguém ganhou/descontou algo fora do padrão.
   getSalarioPontual(colaboradorId, anoId, mes){
     return this.data.salariosPontuais.find(s=>
       s.colaboradorId===colaboradorId && s.anoId===anoId && s.mes===mes);
@@ -457,19 +585,20 @@ const Store = {
     const reg = this.getSalarioPontual(colaboradorId, anoId, mes);
     valor = valor==='' || valor===null || valor===undefined ? null : parseFloat(valor);
     if(valor===null || isNaN(valor)){
-      // vazio = "usar o padrão" -> remove o ajuste, se existir
-      if(reg) this.data.salariosPontuais = this.data.salariosPontuais.filter(s=>s!==reg);
+      if(reg){
+        this.data.salariosPontuais = this.data.salariosPontuais.filter(s=>s!==reg);
+        sb.from('salarios_pontuais').delete().eq('id', reg.id).then(({error})=>{ if(error) avisarErro('remover o ajuste de salário', error); });
+      }
     }else if(reg){
       reg.valor = valor;
+      sb.from('salarios_pontuais').update({ valor }).eq('id', reg.id).then(({error})=>{ if(error) avisarErro('salvar o ajuste de salário', error); });
     }else{
-      this.data.salariosPontuais.push({ id:uid(), colaboradorId, anoId, mes, valor });
+      const novo = { id:uid(), colaboradorId, anoId, mes, valor };
+      this.data.salariosPontuais.push(novo);
+      sb.from('salarios_pontuais').insert(salarioPontualToRow(novo)).then(({error})=>{ if(error) avisarErro('salvar o ajuste de salário', error); });
     }
-    this.save();
   },
 
-  // Quanto esse colaborador custa NESTE mês específico, na ordem de
-  // prioridade: ajuste pontual (só aquele mês) > salário-base efetivo
-  // (herdado da última mudança de cargo) > custoMensal padrão.
   custoMensalEfetivo(colaboradorId, anoId, mes){
     const colab = this.data.colaboradores.find(c=>c.id===colaboradorId);
     if(!colab) return 0;
@@ -478,10 +607,6 @@ const Store = {
     return this.salarioBaseEfetivo(colaboradorId, anoId, mes);
   },
 
-  // Mudança de cargo: diferente do ajuste de salário (que vale só um mês),
-  // uma mudança de cargo vale a PARTIR daquele (ano, mês) em diante, até
-  // que outra mudança futura (ou nenhuma) substitua ela. Pode vir junto com
-  // um novo salário-base (também passa a valer a partir do mesmo mês).
   _chaveAnoMes(anoId, mes){
     const ano = this.getAno(anoId)?.ano || 0;
     return ano*12 + mes;
@@ -498,19 +623,20 @@ const Store = {
     salario = (salario==='' || salario===null || salario===undefined) ? null : parseFloat(salario);
     if(salario!==null && isNaN(salario)) salario = null;
     if(!cargo){
-      // vazio = remove a mudança agendada pra este mês específico
-      if(reg) this.data.mudancasCargo = this.data.mudancasCargo.filter(m=>m!==reg);
+      if(reg){
+        this.data.mudancasCargo = this.data.mudancasCargo.filter(m=>m!==reg);
+        sb.from('mudancas_cargo').delete().eq('id', reg.id).then(({error})=>{ if(error) avisarErro('remover a mudança de cargo', error); });
+      }
     }else if(reg){
-      reg.cargo = cargo;
-      reg.salario = salario;
+      reg.cargo = cargo; reg.salario = salario;
+      sb.from('mudancas_cargo').update({ cargo, salario }).eq('id', reg.id).then(({error})=>{ if(error) avisarErro('salvar a mudança de cargo', error); });
     }else{
-      this.data.mudancasCargo.push({ id:uid(), colaboradorId, anoId, mes, cargo, salario });
+      const novo = { id:uid(), colaboradorId, anoId, mes, cargo, salario };
+      this.data.mudancasCargo.push(novo);
+      sb.from('mudancas_cargo').insert(mudancaCargoToRow(novo)).then(({error})=>{ if(error) avisarErro('salvar a mudança de cargo', error); });
     }
-    this.save();
   },
 
-  // Acha a mudança de cargo mais recente que já valia nesse (ano, mês) —
-  // usado tanto pra saber o cargo quanto o salário-base efetivo.
   _mudancaCargoVigente(colaboradorId, anoId, mes){
     const alvo = this._chaveAnoMes(anoId, mes);
     const candidatas = this.data.mudancasCargo
@@ -521,9 +647,6 @@ const Store = {
     return candidatas[0] || null;
   },
 
-  // Qual cargo vale nesse (ano, mês): a mudança agendada mais recente que já
-  // tenha "começado a valer" até esse ponto, ou o cargo cadastrado no
-  // colaborador (o padrão), se nenhuma mudança já valia.
   cargoEfetivo(colaboradorId, anoId, mes){
     const colab = this.data.colaboradores.find(c=>c.id===colaboradorId);
     if(!colab) return '';
@@ -531,9 +654,6 @@ const Store = {
     return vigente ? vigente.cargo : colab.cargo;
   },
 
-  // Salário-base "permanente" vigente nesse (ano, mês): o salário registrado
-  // junto da última mudança de cargo que já valia, ou o custoMensal padrão
-  // do colaborador, se nenhuma mudança trouxe salário novo.
   salarioBaseEfetivo(colaboradorId, anoId, mes){
     const colab = this.data.colaboradores.find(c=>c.id===colaboradorId);
     if(!colab) return 0;
@@ -541,7 +661,6 @@ const Store = {
     return (vigente && vigente.salario!==null && vigente.salario!==undefined) ? vigente.salario : colab.custoMensal;
   },
 
-  // custo de folha de um colaborador em um mês, opcionalmente restrito a um projeto
   custoFolhaColaborador(anoId, mes, colaboradorId, projetoFiltro){
     const colab = this.data.colaboradores.find(c=>c.id===colaboradorId);
     if(!colab) return 0;
@@ -552,18 +671,12 @@ const Store = {
     return custoBase * (pct/100);
   },
 
-  // Diz se um registro pertence a um projeto do tipo Cultura (projetos de
-  // Cultura nunca têm ganho — por isso o gasto deles não deve contar no ROI,
-  // senão puxa o número pra baixo sem nenhuma contrapartida possível).
   _projetoEhCultura(projetoId){
-    if(!projetoId) return false; // "Geral" (sem projeto) nunca é Cultura
+    if(!projetoId) return false;
     const p = this.data.projetos.find(x=>x.id===projetoId);
     return !!(p && (p.tipo||'impacto')==='cultura');
   },
 
-  // gasto de folha total (todos colaboradores) em um mês, opcionalmente por projeto.
-  // semCultura=true tira as alocações de projetos de Cultura da soma — usado
-  // só para o cálculo de ROI, nunca para o "Gasto total" de verdade.
   gastoFolha(anoId, mes, projetoFiltro, semCultura){
     const alocs = this.getAlocacoesDoMes(anoId, mes)
       .filter(a=> this._matchProjeto(a.projetoId, projetoFiltro))
@@ -588,8 +701,6 @@ const Store = {
     return this.gastoFolha(anoId, mes, projetoFiltro, semCultura) + this.gastoExtra(anoId, mes, projetoFiltro, semCultura);
   },
 
-  // Diz se um (ano, mês) ainda está no futuro em relação a hoje (data real
-  // do dispositivo) — usado pra saber quando entra em cena a previsão.
   ehMesFuturo(anoId, mes){
     const anoObj = this.getAno(anoId);
     if(!anoObj) return false;
@@ -599,12 +710,6 @@ const Store = {
     return mes > mesReal;
   },
 
-  // Projeta o gasto de FOLHA de um mês futuro: repete a mesma "mistura" de
-  // alocações (% de cada colaborador em cada projeto) do mês atual real —
-  // já que ninguém preencheu % pros meses que ainda não chegaram — mas usa
-  // o salário EFETIVO de cada um no mês futuro (o que já respeita mudanças
-  // de cargo/salário já agendadas), e tira quem já tem saída agendada antes
-  // desse mês.
   gastoFolhaProjetado(anoId, mesAlvo, projetoFiltro, semCultura){
     const anoObj = this.getAno(anoId);
     if(!anoObj) return 0;
@@ -617,16 +722,12 @@ const Store = {
     return alocsBase.reduce((sum, a)=>{
       const colab = this.data.colaboradores.find(c=>c.id===a.colaboradorId);
       if(!colab) return sum;
-      if(this.colaboradorJaSaiu(colab, anoObj.ano, mesAlvo)) return sum; // já não estaria mais na empresa
+      if(this.colaboradorJaSaiu(colab, anoObj.ano, mesAlvo)) return sum;
       const custoEfetivo = this.custoMensalEfetivo(a.colaboradorId, anoId, mesAlvo);
       return sum + custoEfetivo * (a.percentual/100);
     }, 0);
   },
 
-  // Gasto total "com previsão": pra meses que já aconteceram, é o gasto real
-  // de sempre; pra meses futuros, usa a folha projetada + os gastos extras
-  // já registrados (esses não são suposição, se existem é porque alguém já
-  // lançou algo recorrente que cobre aquele mês).
   gastoTotalComPrevisao(anoId, mes, projetoFiltro, semCultura){
     if(this.ehMesFuturo(anoId, mes)){
       return this.gastoFolhaProjetado(anoId, mes, projetoFiltro, semCultura) + this.gastoExtra(anoId, mes, projetoFiltro, semCultura);
@@ -634,8 +735,6 @@ const Store = {
     return this.gastoTotal(anoId, mes, projetoFiltro, semCultura);
   },
 
-  // Mesma coisa que gastoTotalComPrevisao, mas sempre excluindo Cultura —
-  // usado só nos cálculos de ROI (do mês, acumulado, no gráfico).
   gastoTotalParaRoi(anoId, mes, projetoFiltro){
     return this.gastoTotalComPrevisao(anoId, mes, projetoFiltro, true);
   },
@@ -644,7 +743,6 @@ const Store = {
     return this.ganho(anoId, mes, projetoFiltro) - this.gastoTotal(anoId, mes, projetoFiltro);
   },
 
-  // soma ao longo de vários meses (usado quando "mês" selecionado = ano todo)
   agregarAno(anoId, projetoFiltro, fn){
     let total = 0;
     for(let m=1;m<=12;m++) total += fn.call(this, anoId, m, projetoFiltro);
@@ -671,8 +769,6 @@ const Store = {
     return { linhas, totalColaboradores: vistos.size };
   },
 
-  // Período (primeiro/último mês com % > 0) de um colaborador dentro de um
-  // projeto, derivado direto das alocações — não é um campo separado.
   periodoColaboradorNoProjeto(anoId, colaboradorId, projetoId){
     const meses = this.data.alocacoes
       .filter(a=>a.anoId===anoId && a.colaboradorId===colaboradorId && a.projetoId===projetoId && a.percentual>0)
@@ -681,8 +777,6 @@ const Store = {
     return { min: Math.min(...meses), max: Math.max(...meses) };
   },
 
-  // Todos os projetos (de um ano) em que um colaborador teve alguma alocação,
-  // com o período derivado — usado na tela de detalhe do colaborador.
   projetosDoColaborador(anoId, colaboradorId){
     return this.data.projetos
       .filter(p=>p.anoId===anoId)

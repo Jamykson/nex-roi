@@ -153,14 +153,14 @@ function renderDashboard(){
   const semAno = !ctx.anoId;
   const filtro = projetoFiltroAtual();
 
-  const gasto = semAno ? 0 : metrica(Store.gastoTotalComPrevisao, filtro);
+  // Gasto agregado (Gasto total, Saldo, ROI) ignora Cultura em todo lugar —
+  // são projetos que nunca têm ganho por definição, então incluir o gasto
+  // deles nesses números só puxaria pra baixo sem contrapartida possível.
+  // As linhas de CADA projeto na tabela abaixo continuam mostrando o valor
+  // real dele (Cultura incluso), só os totais gerais que ignoram.
+  const gasto = semAno ? 0 : metrica(Store.gastoTotalParaRoi, filtro);
   const ganho = semAno ? 0 : metrica(Store.ganho, filtro);
   const saldo = ganho - gasto;
-  // ROI usa um gasto separado, sem os projetos de Cultura — eles nunca têm
-  // ganho por definição, então incluir o gasto deles no ROI puxaria o número
-  // pra baixo sem nenhuma contrapartida possível. "Gasto total"/"Saldo"
-  // continuam mostrando o valor real, sem esse filtro.
-  const gastoParaRoi = semAno ? 0 : metrica(Store.gastoTotalParaRoi, filtro);
 
   el('kpiGasto').textContent = formatCurrency(gasto);
   el('kpiGanho').textContent = formatCurrency(ganho);
@@ -170,11 +170,10 @@ function renderDashboard(){
   stampSaldo.classList.toggle('negativo', saldo<0);
   const ehAnoTodo = ctx.mes === 'ano';
   el('kpiRoiCard').style.display = ehAnoTodo ? 'none' : '';
-  el('kpiRoi').innerHTML = semAno ? '—' : roiLabel(gastoParaRoi, ganho);
-  const gastoAcum = semAno ? 0 : acumuladoAteMes(Store.gastoTotalComPrevisao, filtro);
-  const gastoAcumParaRoi = semAno ? 0 : acumuladoAteMes(Store.gastoTotalParaRoi, filtro);
+  el('kpiRoi').innerHTML = semAno ? '—' : roiLabel(gasto, ganho);
+  const gastoAcum = semAno ? 0 : acumuladoAteMes(Store.gastoTotalParaRoi, filtro);
   const ganhoAcum = semAno ? 0 : acumuladoAteMes(Store.ganho, filtro);
-  el('kpiRoiAcumulado').innerHTML = semAno ? '—' : roiLabel(gastoAcumParaRoi, ganhoAcum);
+  el('kpiRoiAcumulado').innerHTML = semAno ? '—' : roiLabel(gastoAcum, ganhoAcum);
 
     const anoObj = Store.getAno(ctx.anoId);
   const projTxt = filtro==='ALL' ? 'todos os projetos' : filtro==='GERAL' ? 'lançamentos gerais' : nomeProjeto(ctx.projetoId);
@@ -373,7 +372,7 @@ function renderChartEvolucao(){
   const corGanhoReal = '#0E7C6B', corGanhoPrevisto = '#9BD1C4';
   for(let m=1;m<=12;m++){
     const futuro = Store.ehMesFuturo(ctx.anoId, m);
-    gastos.push(Store.gastoTotalComPrevisao(ctx.anoId, m, filtro));
+    gastos.push(Store.gastoTotalParaRoi(ctx.anoId, m, filtro));
     ganhos.push(Store.ganho(ctx.anoId, m, filtro));
     coresGasto.push(futuro ? corGastoPrevisto : corGastoReal);
     coresGanho.push(futuro ? corGanhoPrevisto : corGanhoReal);
@@ -1928,12 +1927,13 @@ async function gerarExcelDashboard(){
     if(corTexto) cel.font = { color:{argb:corTexto} };
   }
 
+  // ---- Resumo (KPIs) ----
   tituloSecao('Resumo do período');
   const semAnoExp = !ctx.anoId;
-  const gastoExp = semAnoExp ? 0 : metrica(Store.gastoTotalComPrevisao, filtro);
+  // Mesma regra do Dashboard: Gasto/Saldo/ROI agregados ignoram Cultura.
+  const gastoExp = semAnoExp ? 0 : metrica(Store.gastoTotalParaRoi, filtro);
   const ganhoExp = semAnoExp ? 0 : metrica(Store.ganho, filtro);
   const saldoExp = ganhoExp - gastoExp;
-  const gastoParaRoiExp = semAnoExp ? 0 : metrica(Store.gastoTotalParaRoi, filtro);
   const gastoAcumExp = semAnoExp ? 0 : acumuladoAteMes(Store.gastoTotalParaRoi, filtro);
   const ganhoAcumExp = semAnoExp ? 0 : acumuladoAteMes(Store.ganho, filtro);
   const colabCountExp = semAnoExp ? 0 : new Set(colaboradoresPeriodo(ctx.anoId, ctx.mes, filtro).map(l=>l.colaborador.id)).size;
@@ -1943,7 +1943,7 @@ async function gerarExcelDashboard(){
   const kpiCores = [LOSS, GAIN, saldoExp>=0?GAIN:LOSS, null];
   if(!ehAnoTodoExp){
     kpiLabels.push('ROI do mês');
-    const roiMes = roiPercent(gastoParaRoiExp, ganhoExp);
+    const roiMes = roiPercent(gastoExp, ganhoExp);
     kpiValores.push(roiMes===null ? '—' : `${roiMes>0?'+':''}${roiMes.toFixed(1).replace('.0','')}%`);
     kpiCores.push(roiMes===null ? MUTED : (roiMes>=0?GAIN:LOSS));
   }

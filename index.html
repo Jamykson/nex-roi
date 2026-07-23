@@ -380,7 +380,12 @@
             <select id="projTipo">
               <option value="impacto">Impacto</option>
               <option value="cultura">Cultura</option>
+              <option value="estrutural">Estrutural</option>
             </select>
+          </div>
+          <div class="field" id="wrapProjTornaImpacto" hidden>
+            <label>Vira Impacto a partir de (opcional)</label>
+            <input type="text" id="projTornaImpacto" placeholder="mm/aaaa" inputmode="numeric">
           </div>
           <div class="field">
             <label>Início</label>
@@ -468,6 +473,7 @@
       </div>
 
       <p class="empty-hint" id="ganhosCulturaAviso" hidden style="margin:0 0 20px;">Projetos de Cultura não têm ganhos — só acompanham gastos (folha e extras).</p>
+      <p class="empty-hint" id="ganhosEstruturalAviso" hidden style="margin:0 0 20px;"></p>
 
       <div id="wrapGanhosProjeto">
         <div class="panel panel-form">

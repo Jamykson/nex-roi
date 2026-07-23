@@ -202,9 +202,10 @@ function renderDashboard(){
     const projetosDoAno = ehAnoTodo
       ? projetosDoAnoBruto
       : projetosDoAnoBruto.filter(p => projetoAtivoNoMes(p, anoObj.ano, ctx.mes));
+    const mesParaTipoDash = ehAnoTodo ? 12 : ctx.mes;
     const linhas = projetosDoAno.map(p=>({
       nome: p.nome, cor: p.cor,
-      ehCultura: (p.tipo||'impacto')==='cultura',
+      ehCultura: Store.tipoEfetivoProjeto(p.id, anoObj.ano, mesParaTipoDash) !== 'impacto',
       gasto: metrica(Store.gastoTotalComPrevisao, p.id),
       ganho: metrica(Store.ganho, p.id),
       gastoAcum: acumuladoAteMes(Store.gastoTotalComPrevisao, p.id),
@@ -684,11 +685,15 @@ function periodoProjetoLabel(p){
   return `${inicio} → ${MESES[p.mesFim-1]}`;
 }
 
-function tipoProjetoBadge(p){
-  const tipo = p.tipo || 'impacto';
-  return tipo==='cultura'
-    ? `<span class="badge cultura">Cultura</span>`
-    : `<span class="badge impacto">Impacto</span>`;
+function tipoProjetoBadge(p, tipoEfetivo){
+  const labels = { impacto:'Impacto', cultura:'Cultura', estrutural:'Estrutural' };
+  const tipoMostrado = tipoEfetivo || p.tipo || 'impacto';
+  let html = `<span class="badge ${tipoMostrado}">${labels[tipoMostrado] || tipoMostrado}</span>`;
+  if((p.tipo||'impacto')==='estrutural' && p.tornaImpactoAnoId && tipoMostrado !== 'impacto'){
+    const anoConv = Store.getAno(p.tornaImpactoAnoId)?.ano;
+    if(anoConv) html += ` <span class="muted small">vira Impacto em ${String(p.tornaImpactoMes||1).padStart(2,'0')}/${anoConv}</span>`;
+  }
+  return html;
 }
 
 // Calcula uma métrica (gasto/ganho) usando o ANO DO PRÓPRIO PROJETO,
@@ -810,11 +815,14 @@ function linhaProjeto(p, indentado){
   const gasto = metricaProjeto(Store.gastoTotal, p);
   const ganho = metricaProjeto(Store.ganho, p);
   const saldo = ganho - gasto;
+  const anoNumParaTipo = Store.getAno(anoParaMembros)?.ano;
+  const mesParaTipo = ctx.mes==='ano' ? new Date().getMonth()+1 : ctx.mes;
+  const tipoEfetivo = Store.tipoEfetivoProjeto(p.id, anoNumParaTipo, mesParaTipo);
   return `<tr class="${indentado?'sub-row':''}">
     <td>${indentado?'':`<span class="color-dot" style="background:${p.cor}"></span>`}</td>
     <td><button class="link-btn" data-action="abrir-projeto" data-id="${p.id}">${escapeHtml(p.nome)}</button></td>
     <td class="mono small">${anoObj ? anoObj.ano : '—'}</td>
-    <td>${tipoProjetoBadge(p)}</td>
+    <td>${tipoProjetoBadge(p, tipoEfetivo)}</td>
     <td class="mono small">${periodoProjetoLabel(p)} ${p.emAndamento?'<span class="badge mensal">em andamento</span>':''}</td>
     <td class="num">${numMembros}</td>
     <td class="num loss-text">${formatCurrency(gasto)}</td>
@@ -851,7 +859,9 @@ function renderProjetoDetalhe(){
 
   el('detalheAno').textContent = ano ? `Projeto · ${ano.ano}` : 'Projeto';
   el('detalheNomeProjeto').textContent = projeto.nome;
-  el('detalheSubtitle').innerHTML = `${periodoProjetoLabel(projeto)} · Resumo ${periodoTexto()} · ${tipoProjetoBadge(projeto)}`;
+  const mesParaTipoDetalhe = ctx.mes==='ano' ? 12 : ctx.mes;
+  const tipoEfetivoDetalhe = Store.tipoEfetivoProjeto(projeto.id, ano?.ano, mesParaTipoDetalhe);
+  el('detalheSubtitle').innerHTML = `${periodoProjetoLabel(projeto)} · Resumo ${periodoTexto()} · ${tipoProjetoBadge(projeto, tipoEfetivoDetalhe)}`;
 
   const btnRenovar = el('btnRenovarProjeto');
   const avisoRenovado = el('renovadoAviso');
@@ -871,9 +881,16 @@ function renderProjetoDetalhe(){
     avisoRenovado.hidden = true;
   }
 
-  const ehCultura = (projeto.tipo || 'impacto') === 'cultura';
+  const ehCultura = tipoEfetivoDetalhe === 'cultura';
+  const ehEstrutural = tipoEfetivoDetalhe === 'estrutural';
   el('wrapGanhosProjeto').hidden = ehCultura;
   el('ganhosCulturaAviso').hidden = !ehCultura;
+  el('ganhosEstruturalAviso').hidden = !ehEstrutural;
+  if(ehEstrutural){
+    el('ganhosEstruturalAviso').textContent = projeto.tornaImpactoAnoId
+      ? `Projeto Estrutural: o gasto não conta nos totais gerais ainda. A partir de ${String(projeto.tornaImpactoMes||1).padStart(2,'0')}/${Store.getAno(projeto.tornaImpactoAnoId)?.ano}, ele passa a ser Impacto e você já pode lançar ganhos daquele mês em diante.`
+      : 'Projeto Estrutural: o gasto não conta nos totais gerais, e não é possível lançar ganhos enquanto ele não virar Impacto (edite o projeto pra agendar essa conversão).';
+  }
 
   const gasto = metrica(Store.gastoTotal, projetoDetalheId);
   const ganho = metrica(Store.ganho, projetoDetalheId);
@@ -1511,6 +1528,13 @@ function syncProjMesFim(){
 el('projEmAndamento').addEventListener('change', syncProjMesFim);
 syncProjMesFim();
 
+function syncProjTornaImpacto(){
+  el('wrapProjTornaImpacto').hidden = el('projTipo').value !== 'estrutural';
+}
+el('projTipo').addEventListener('change', syncProjTornaImpacto);
+syncProjTornaImpacto();
+el('projTornaImpacto').addEventListener('input', () => maskMesAno(el('projTornaImpacto')));
+
 el('projInicio').addEventListener('input', () => maskMesAno(el('projInicio')));
 
 el('formProjeto').addEventListener('submit', e=>{
@@ -1547,6 +1571,19 @@ el('formProjeto').addEventListener('submit', e=>{
     }
   }
 
+  let tornaImpactoAnoId = null, tornaImpactoMes = null;
+  if(el('projTipo').value === 'estrutural'){
+    const tornaImpactoTexto = el('projTornaImpacto').value.trim();
+    if(tornaImpactoTexto){
+      const tornaImpactoDigitado = parseValorInicio(tornaImpactoTexto);
+      if(!tornaImpactoDigitado){ toast('Digite "Vira Impacto a partir de" no formato mm/aaaa, ou deixe em branco.'); return; }
+      const anoObjConv = Store.getAnoPorNumero(tornaImpactoDigitado.ano);
+      if(!anoObjConv){ toast(`Não existe o ano ${tornaImpactoDigitado.ano} cadastrado.`); return; }
+      tornaImpactoAnoId = anoObjConv.id;
+      tornaImpactoMes = tornaImpactoDigitado.mes;
+    }
+  }
+
   ctx.anoId = anoObj.id;
   Store.setAnoAtivo(anoObj.id);
   Store.salvarProjeto({
@@ -1556,7 +1593,9 @@ el('formProjeto').addEventListener('submit', e=>{
     mesInicio: mesInicioSelecionado,
     mesFim: el('projMesFim').value,
     emAndamento: el('projEmAndamento').checked,
-    tipo: el('projTipo').value
+    tipo: el('projTipo').value,
+    tornaImpactoAnoId,
+    tornaImpactoMes
   });
   if(!idEditando) toast(`Projeto salvo em ${anoObj.ano}.`);
   resetFormProjeto();
@@ -1571,6 +1610,7 @@ function resetFormProjeto(){
   el('formProjeto').reset();
   el('projEmAndamento').checked = true;
   syncProjMesFim();
+  syncProjTornaImpacto();
   el('btnProjSubmit').textContent = 'Adicionar projeto';
   el('btnProjCancel').hidden = true;
 }
@@ -1597,6 +1637,8 @@ document.querySelector('#page-projetos').addEventListener('click', e=>{
     el('projNome').value = p.nome;
     el('projInicio').value = formatarValorInicio(Store.getAno(p.anoId), p.mesInicio || 1);
     el('projTipo').value = p.tipo || 'impacto';
+    el('projTornaImpacto').value = p.tornaImpactoAnoId ? formatarValorInicio(Store.getAno(p.tornaImpactoAnoId), p.tornaImpactoMes || 1) : '';
+    syncProjTornaImpacto();
     el('projEmAndamento').checked = p.emAndamento !== false;
     el('projMesFim').value = p.mesFim || 12;
     syncProjMesFim();
@@ -1980,9 +2022,10 @@ async function gerarExcelDashboard(){
   linha++;
 
   const projetosDoAnoExp = ctx.anoId ? Store.projetosDoAno(ctx.anoId) : [];
+  const mesParaTipoExp = ehAnoTodoExp ? 12 : ctx.mes;
   const linhasProjExp = projetosDoAnoExp.map(p=>({
     nome: p.nome,
-    ehCultura: (p.tipo||'impacto')==='cultura',
+    ehCultura: Store.tipoEfetivoProjeto(p.id, anoObj.ano, mesParaTipoExp) !== 'impacto',
     gasto: metrica(Store.gastoTotalComPrevisao, p.id),
     ganho: metrica(Store.ganho, p.id),
     gastoAcum: acumuladoAteMes(Store.gastoTotalComPrevisao, p.id),

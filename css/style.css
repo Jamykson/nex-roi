@@ -347,6 +347,7 @@ button:disabled:hover{ background:inherit; }
 .badge.mensal{background:var(--lime-500); color:#0B2B1E; border:1px solid var(--lime-600);}
 .badge.impacto{background:var(--gain-soft); color:var(--gain); border:1px solid var(--gain);}
 .badge.cultura{background:#F1E9FB; color:#6B3FA0; border:1px solid #B79AD9;}
+.badge.estrutural{background:#EEF2F6; color:#5A6B7D; border:1px solid #B9C4CF;}
 .badge.previsao{background:#FBEAE7; color:#B5544A; border:1px solid #E8AFA6;}
 
 .empty-hint{color:var(--ink-faint); font-size:13px; padding:8px 2px 0;}

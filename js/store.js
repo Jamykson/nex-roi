@@ -54,6 +54,7 @@ function defaultData(){
     mudancasCargo: [],
     ganhos: [],
     gastosExtras: [],
+    confirmacoes: [],
     activeAnoId: null
   };
 }
@@ -90,13 +91,16 @@ function projetoFromRow(r){
   };
   if(r.renovado_de_id) p.renovadoDeId = r.renovado_de_id;
   if(r.renovado_para_id) p.renovadoParaId = r.renovado_para_id;
+  if(r.torna_impacto_ano_id) p.tornaImpactoAnoId = r.torna_impacto_ano_id;
+  if(r.torna_impacto_mes) p.tornaImpactoMes = r.torna_impacto_mes;
   return p;
 }
 function projetoToRow(p){
   return {
     id:p.id, nome:p.nome, ano_id:p.anoId, cor:p.cor, mes_inicio:p.mesInicio,
     em_andamento:p.emAndamento, mes_fim:p.mesFim, tipo:p.tipo,
-    renovado_de_id:p.renovadoDeId||null, renovado_para_id:p.renovadoParaId||null
+    renovado_de_id:p.renovadoDeId||null, renovado_para_id:p.renovadoParaId||null,
+    torna_impacto_ano_id:p.tornaImpactoAnoId||null, torna_impacto_mes:p.tornaImpactoMes||null
   };
 }
 
@@ -128,6 +132,13 @@ function lancamentoToRow(l){
   return { id:l.id, ano_id:l.anoId, projeto_id:l.projetoId||null, tipo:l.tipo, mes_inicio:l.mesInicio, mes_fim:l.mesFim, descricao:l.descricao||'', valor:l.valor };
 }
 
+function confirmacaoFromRow(r){
+  return { id:r.id, colaboradorId:r.colaborador_id, anoId:r.ano_id, mes:r.mes, confirmadoEm:r.confirmado_em };
+}
+function confirmacaoToRow(c){
+  return { id:c.id, colaborador_id:c.colaboradorId, ano_id:c.anoId, mes:c.mes, confirmado_em:c.confirmadoEm };
+}
+
 const Store = {
   data: null,
   _storageOk: true,
@@ -135,7 +146,7 @@ const Store = {
   async load(){
     this.data = defaultData();
     try{
-      const [anosR, cargosR, colabR, projR, alocR, salPontR, mudCargoR, ganhosR, gastosR] = await Promise.all([
+      const [anosR, cargosR, colabR, projR, alocR, salPontR, mudCargoR, ganhosR, gastosR, confR] = await Promise.all([
         sb.from('anos').select('*'),
         sb.from('cargos').select('*'),
         sb.from('colaboradores').select('*'),
@@ -145,8 +156,9 @@ const Store = {
         sb.from('mudancas_cargo').select('*'),
         sb.from('ganhos').select('*'),
         sb.from('gastos_extras').select('*'),
+        sb.from('confirmacoes').select('*'),
       ]);
-      const primeiroErro = [anosR, cargosR, colabR, projR, alocR, salPontR, mudCargoR, ganhosR, gastosR].find(r=>r.error);
+      const primeiroErro = [anosR, cargosR, colabR, projR, alocR, salPontR, mudCargoR, ganhosR, gastosR, confR].find(r=>r.error);
       if(primeiroErro) throw primeiroErro.error;
 
       this.data.anos = anosR.data.map(anoFromRow).sort((a,b)=>a.ano-b.ano);
@@ -158,6 +170,7 @@ const Store = {
       this.data.mudancasCargo = mudCargoR.data.map(mudancaCargoFromRow);
       this.data.ganhos = ganhosR.data.map(lancamentoFromRow);
       this.data.gastosExtras = gastosR.data.map(lancamentoFromRow);
+      this.data.confirmacoes = confR.data.map(confirmacaoFromRow);
       this._storageOk = true;
     }catch(e){
       console.error('Não foi possível carregar os dados do Supabase.', e);
@@ -348,8 +361,25 @@ const Store = {
     sb.from('colaboradores').delete().eq('id', id).then(({error})=>{ if(error) avisarErro('remover o colaborador', error); });
   },
 
+  // ---------------- Confirmação de preenchimento mensal ----------------
+  getConfirmacao(colaboradorId, anoId, mes){
+    return this.data.confirmacoes.find(c=>
+      c.colaboradorId===colaboradorId && c.anoId===anoId && c.mes===mes);
+  },
+
+  confirmarPreenchimento(colaboradorId, anoId, mes){
+    const reg = this.getConfirmacao(colaboradorId, anoId, mes);
+    const agora = new Date().toISOString();
+    let registro;
+    if(reg){ reg.confirmadoEm = agora; registro = reg; }
+    else{ registro = { id: uid(), colaboradorId, anoId, mes, confirmadoEm: agora }; this.data.confirmacoes.push(registro); }
+    sb.from('confirmacoes').upsert(confirmacaoToRow(registro), { onConflict: 'colaborador_id,ano_id,mes' })
+      .then(({error})=>{ if(error) avisarErro('registrar a confirmação', error); });
+    return registro;
+  },
+
   // ---------------- Projetos ----------------
-  salvarProjeto({id, nome, anoId, mesInicio, mesFim, emAndamento, tipo}){
+  salvarProjeto({id, nome, anoId, mesInicio, mesFim, emAndamento, tipo, tornaImpactoAnoId, tornaImpactoMes}){
     let registro;
     if(id){
       const p = this.data.projetos.find(x=>x.id===id);
@@ -360,6 +390,15 @@ const Store = {
         p.emAndamento = !!emAndamento;
         p.mesFim = p.emAndamento ? null : parseInt(mesFim,10);
         if(tipo) p.tipo = tipo;
+        // só o tipo Estrutural usa isso; qualquer outro tipo não tem
+        // conversão agendada — limpa se o tipo mudou pra outra coisa.
+        if(tipo === 'estrutural' && tornaImpactoAnoId){
+          p.tornaImpactoAnoId = tornaImpactoAnoId;
+          p.tornaImpactoMes = parseInt(tornaImpactoMes,10) || 1;
+        }else{
+          delete p.tornaImpactoAnoId;
+          delete p.tornaImpactoMes;
+        }
         registro = p;
       }
     }else{
@@ -371,6 +410,10 @@ const Store = {
         mesFim: emAndamento ? null : (parseInt(mesFim,10) || 12),
         tipo: tipo || 'impacto'
       };
+      if(tipo === 'estrutural' && tornaImpactoAnoId){
+        registro.tornaImpactoAnoId = tornaImpactoAnoId;
+        registro.tornaImpactoMes = parseInt(tornaImpactoMes,10) || 1;
+      }
       this.data.projetos.push(registro);
     }
     if(registro){
@@ -540,7 +583,12 @@ const Store = {
   salvarGanho(campos){
     if(campos.projetoId){
       const p = this.data.projetos.find(x=>x.id===campos.projetoId);
-      if(p && p.tipo==='cultura') return { ok:false, msg:'Projetos de Cultura não têm ganhos — só gastos.' };
+      if(p){
+        const anoNum = this.getAno(campos.anoId)?.ano;
+        const tipoEfetivo = this.tipoEfetivoProjeto(p.id, anoNum, parseInt(campos.mesInicio,10));
+        if(tipoEfetivo === 'cultura') return { ok:false, msg:'Projetos de Cultura não têm ganhos — só gastos.' };
+        if(tipoEfetivo === 'estrutural') return { ok:false, msg:'Este projeto ainda é Estrutural neste mês — só tem ganhos a partir do mês em que virar Impacto.' };
+      }
     }
     return this._salvarLancamento('ganhos', 'ganhos', campos);
   },
@@ -677,10 +725,39 @@ const Store = {
     return !!(p && (p.tipo||'impacto')==='cultura');
   },
 
+  // Tipo "de verdade" de um projeto num (ano, mês) específico. Só importa
+  // pra projetos Estruturais: eles começam sem contar em nada (igual
+  // Cultura), mas podem ter uma conversão agendada pra "Impacto" a partir
+  // de um mês — a partir dali, o tipo efetivo já é 'impacto'. Se nunca foi
+  // agendado (ou o projeto simplesmente terminou antes), continua
+  // 'estrutural' pra sempre. Cultura e Impacto não têm essa conversão —
+  // o tipo deles é sempre o mesmo, fixo.
+  tipoEfetivoProjeto(projetoId, anoNum, mes){
+    const p = this.data.projetos.find(x=>x.id===projetoId);
+    if(!p) return 'impacto';
+    const tipoBase = p.tipo || 'impacto';
+    if(tipoBase !== 'estrutural') return tipoBase;
+    if(!p.tornaImpactoAnoId) return 'estrutural';
+    const anoConv = this.getAno(p.tornaImpactoAnoId)?.ano;
+    if(anoConv===undefined || anoNum===undefined) return 'estrutural';
+    const chaveAlvo = anoNum*12 + mes;
+    const chaveConv = anoConv*12 + (p.tornaImpactoMes||1);
+    return chaveAlvo >= chaveConv ? 'impacto' : 'estrutural';
+  },
+
+  // Diz se o gasto de um projeto deve contar nos totais agregados (Gasto
+  // total, Saldo, ROI) num (ano, mês) — só conta se o tipo EFETIVO ali for
+  // Impacto. Cultura nunca conta; Estrutural só conta depois de converter.
+  _projetoContaComoImpacto(projetoId, anoId, mes){
+    if(!projetoId) return true; // "Geral" (sem projeto) sempre conta
+    const anoNum = this.getAno(anoId)?.ano;
+    return this.tipoEfetivoProjeto(projetoId, anoNum, mes) === 'impacto';
+  },
+
   gastoFolha(anoId, mes, projetoFiltro, semCultura){
     const alocs = this.getAlocacoesDoMes(anoId, mes)
       .filter(a=> this._matchProjeto(a.projetoId, projetoFiltro))
-      .filter(a=> !semCultura || !this._projetoEhCultura(a.projetoId));
+      .filter(a=> !semCultura || this._projetoContaComoImpacto(a.projetoId, anoId, mes));
     return alocs.reduce((sum, a)=>{
       const colab = this.data.colaboradores.find(c=>c.id===a.colaboradorId);
       if(!colab) return sum;
@@ -692,7 +769,7 @@ const Store = {
   gastoExtra(anoId, mes, projetoFiltro, semCultura){
     return this.data.gastosExtras
       .filter(l => l.anoId===anoId && this._lancamentoAplicaNoMes(l, mes) && this._matchProjeto(l.projetoId, projetoFiltro))
-      .filter(l => !semCultura || !this._projetoEhCultura(l.projetoId))
+      .filter(l => !semCultura || this._projetoContaComoImpacto(l.projetoId, anoId, mes))
       .reduce((s,l)=>s+l.valor, 0);
   },
   ganho(anoId, mes, projetoFiltro){ return this._somaLancamentos('ganhos', anoId, mes, projetoFiltro); },
@@ -718,7 +795,7 @@ const Store = {
     const mesBase = (anoObj.ano === anoReal) ? mesReal : 12;
     const alocsBase = this.getAlocacoesDoMes(anoId, mesBase)
       .filter(a=> this._matchProjeto(a.projetoId, projetoFiltro))
-      .filter(a=> !semCultura || !this._projetoEhCultura(a.projetoId));
+      .filter(a=> !semCultura || this._projetoContaComoImpacto(a.projetoId, anoId, mesAlvo));
     return alocsBase.reduce((sum, a)=>{
       const colab = this.data.colaboradores.find(c=>c.id===a.colaboradorId);
       if(!colab) return sum;

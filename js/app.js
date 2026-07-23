@@ -20,6 +20,7 @@ let projetosGruposAbertos = new Set(); // ids (do projeto mais antigo da cadeia)
 let anosProjetosAbertos = new Set(); // anoId dos anos com a lista de "projetos ativos" expandida na aba Anos
 let chartEvolucao = null;
 let chartRoiMensal = null;
+let modoRoiMensal = 'mensal'; // 'mensal' ou 'acumulado'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -429,11 +430,20 @@ function renderChartRoiMensal(){
   const corPos = '#0E7C6B', corPosPrevisto = '#9BD1C4';
   const corNeg = '#C2483C', corNegPrevisto = '#E8AFA6';
   const corNula = '#CBD2DC';
+  const acumulado = modoRoiMensal === 'acumulado';
+  let gastoAcum = 0, ganhoAcum = 0;
   for(let m=1;m<=12;m++){
     const futuro = Store.ehMesFuturo(ctx.anoId, m);
     const gastoMes = Store.gastoTotalParaRoi(ctx.anoId, m, filtro);
     const ganhoMes = Store.ganho(ctx.anoId, m, filtro);
-    const roi = roiPercent(gastoMes, ganhoMes);
+    let roi;
+    if(acumulado){
+      gastoAcum += gastoMes;
+      ganhoAcum += ganhoMes;
+      roi = roiPercent(gastoAcum, ganhoAcum);
+    }else{
+      roi = roiPercent(gastoMes, ganhoMes);
+    }
     valores.push(roi);
     if(roi===null) cores.push(corNula);
     else if(roi>=0) cores.push(futuro ? corPosPrevisto : corPos);
@@ -444,7 +454,7 @@ function renderChartRoiMensal(){
     type: 'bar',
     data: {
       labels: MESES,
-      datasets: [{ label:'ROI do mês', data:valores, backgroundColor:cores, borderRadius:4, maxBarThickness:26 }]
+      datasets: [{ label: acumulado ? 'ROI acumulado' : 'ROI do mês', data:valores, backgroundColor:cores, borderRadius:4, maxBarThickness:26 }]
     },
     options: {
       responsive:true,
@@ -453,7 +463,7 @@ function renderChartRoiMensal(){
       onHover: (evt, elements) => cursorDoGrafico(evt, elements),
       plugins:{
         legend:{ display:false },
-        tooltip:{ callbacks:{ label:(item)=> item.raw===null ? 'Sem gasto no mês' : `ROI: ${item.raw>0?'+':''}${item.raw.toFixed(1)}%` } }
+        tooltip:{ callbacks:{ label:(item)=> item.raw===null ? 'Sem gasto no período' : `ROI: ${item.raw>0?'+':''}${item.raw.toFixed(1)}%` } }
       },
       scales:{
         y:{ ticks:{ callback:v=>v+'%', font:{ family:'IBM Plex Mono', size:10 } }, grid:{ color:'#EDF0F5' } },
@@ -461,6 +471,8 @@ function renderChartRoiMensal(){
       }
     }
   });
+
+  el('tituloChartRoi').textContent = acumulado ? 'ROI acumulado' : 'ROI mensal';
 
   const anoRealRoi = new Date().getFullYear();
   const mesRealRoi = new Date().getMonth() + 1;
@@ -1173,10 +1185,18 @@ el('ctxAno').addEventListener('change', e=>{
 
 document.body.addEventListener('click', e=>{
   const btn = e.target.closest('.month-tabs button');
-  if(!btn) return;
+  if(!btn || btn.dataset.mes === undefined) return;
   const v = btn.dataset.mes;
   ctx.mes = v==='ano' ? 'ano' : parseInt(v,10);
   rerenderCurrent();
+});
+
+document.body.addEventListener('click', e=>{
+  const btn = e.target.closest('#toggleRoiModo button');
+  if(!btn) return;
+  modoRoiMensal = btn.dataset.modoRoi;
+  document.querySelectorAll('#toggleRoiModo button').forEach(b=>b.classList.toggle('active', b===btn));
+  renderChartRoiMensal();
 });
 
 el('ctxProjeto').addEventListener('change', e=>{

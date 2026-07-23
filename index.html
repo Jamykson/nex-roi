@@ -132,12 +132,17 @@
         </div>
 
         <div class="panel">
-          <h2>ROI mensal</h2>
-          <div style="position:relative; height:260px;">
-            <canvas id="chartRoiMensal"></canvas>
+        <div class="toolbar-row" style="justify-content:space-between; margin-bottom:4px; flex-wrap:wrap; gap:12px;">
+          <h2 style="margin-bottom:0;" id="tituloChartRoi">ROI mensal</h2>
+          <div class="month-tabs" id="toggleRoiModo">
+            <button data-modo-roi="mensal" class="active">Mensal</button>
+            <button data-modo-roi="acumulado">Acumulado</button>
           </div>
-          <p class="muted small" id="chartRoiPrevisaoLegenda" style="margin-top:10px;"></p>
         </div>
+        <div style="position:relative; height:260px;">
+          <canvas id="chartRoiMensal"></canvas>
+        </div>
+        <p class="muted small" id="chartRoiPrevisaoLegenda" style="margin-top:10px;"></p>
       </div>
 
       <div class="panel">

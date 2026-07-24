@@ -1773,15 +1773,11 @@ el('btnDividirIgualColab').addEventListener('click', ()=>{
   // Zera tudo primeiro, pra nunca esbarrar na trava de 100% enquanto os
   // valores antigos e os novos convivem no meio da troca.
   projetos.forEach(p=>{ Store.setAlocacao(ctx.anoId, ctx.mes, colaboradorDetalheId, p.id, 0); });
-  // Divide com casas decimais (não arredonda pra inteiro) — o último
-  // projeto absorve a pequena diferença de arredondamento, pra fechar
-  // exatamente 100% no total em vez de ficar 1 ponto acima/abaixo nele.
-  const pctBase = Math.round((100 / projetos.length) * 100) / 100;
-  let somaAnteriores = 0;
-  projetos.forEach((p,i)=>{
-    const ehUltimo = i === projetos.length - 1;
-    const pct = ehUltimo ? Math.round((100 - somaAnteriores) * 100) / 100 : pctBase;
-    somaAnteriores += pct;
+  // Divisão exata, sem arredondar — todos os projetos ficam com o mesmo
+  // número (por mais quebrado que seja). A soma continua bem próxima de
+  // 100% dentro da margem de ponto flutuante que a trava já tolera.
+  const pct = 100 / projetos.length;
+  projetos.forEach(p=>{
     Store.setAlocacao(ctx.anoId, ctx.mes, colaboradorDetalheId, p.id, pct);
   });
   toast(`Dividido igualmente entre ${projetos.length} projeto${projetos.length>1?'s':''}.`);

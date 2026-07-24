@@ -623,8 +623,13 @@ function anoMesRealHoje(){
 
 function renderColaboradores(){
   preencherSelectCargos(el('colabCargo'), el('colabId').value ? el('colabCargo').value : '');
-  const { anoObj: anoRealObj, mes: mesReal } = anoMesRealHoje();
-  document.querySelector('#tblColaboradores tbody').innerHTML = Store.data.colaboradores.map(c=>{
+ const { anoObj: anoRealObj, mes: mesReal } = anoMesRealHoje();
+  const colaboradoresOrdenados = [...Store.data.colaboradores].sort((a,b)=>{
+    const ativoA = a.ativo !== false, ativoB = b.ativo !== false;
+    if(ativoA !== ativoB) return ativoA ? -1 : 1; // em atividade primeiro
+    return a.nome.localeCompare(b.nome, 'pt-BR'); // depois, ordem alfabética
+  });
+  document.querySelector('#tblColaboradores tbody').innerHTML = colaboradoresOrdenados.map(c=>{
     const anoEntrada = c.entradaAnoId ? Store.getAno(c.entradaAnoId) : null;
     const entradaTxt = anoEntrada ? formatarValorInicio(anoEntrada, c.entradaMes) : '<span class="muted">—</span>';
     const situacaoTxt = c.ativo === false

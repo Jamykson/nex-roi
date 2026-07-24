@@ -204,7 +204,7 @@ function renderDashboard(){
       : projetosDoAnoBruto.filter(p => projetoAtivoNoMes(p, anoObj.ano, ctx.mes));
     const mesParaTipoDash = ehAnoTodo ? 12 : ctx.mes;
     const linhas = projetosDoAno.map(p=>({
-      nome: p.nome, cor: p.cor,
+      id: p.id, nome: p.nome, cor: p.cor,
       ehCultura: Store.tipoEfetivoProjeto(p.id, anoObj.ano, mesParaTipoDash) !== 'impacto',
       gasto: metrica(Store.gastoTotalComPrevisao, p.id),
       ganho: metrica(Store.ganho, p.id),
@@ -229,7 +229,7 @@ function renderDashboard(){
         const roiMesTxt = l.ehCultura ? '<span class="muted">—</span>' : roiLabel(l.gasto, l.ganho);
         const roiAcumTxt = l.ehCultura ? '<span class="muted">—</span>' : roiLabel(l.gastoAcum, l.ganhoAcum);
         return `<tr>
-          <td><span class="color-dot" style="background:${l.cor}"></span>${escapeHtml(l.nome)}</td>
+          <td><span class="color-dot" style="background:${l.cor}"></span>${l.id ? `<button class="link-btn" data-action="abrir-projeto-dashboard" data-id="${l.id}">${escapeHtml(l.nome)}</button>` : escapeHtml(l.nome)}</td>
           <td class="num loss-text">${formatCurrency(l.gasto)}</td>
           <td class="num gain-text">${formatCurrency(l.ganho)}</td>
           <td class="num" style="color:${s>=0?'var(--gain)':'var(--loss)'}">${formatCurrency(s)}</td>
@@ -1218,6 +1218,16 @@ document.body.addEventListener('click', e=>{
 el('ctxProjeto').addEventListener('change', e=>{
   ctx.projetoId = e.target.value;
   rerenderCurrent();
+});
+
+document.querySelector('#page-dashboard').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-action="abrir-projeto-dashboard"]');
+  if(!btn) return;
+  // Mantém o ano/mês que já estava selecionado no Dashboard — a página de
+  // detalhe do projeto usa o mesmo ctx.anoId/ctx.mes globais, então só
+  // trocar o projeto aberto já mostra a data certa.
+  projetoDetalheId = btn.dataset.id;
+  setPage('projeto-detalhe');
 });
 
 el('btnVoltarProjetos').addEventListener('click', ()=>{ setPage('projetos'); });

@@ -956,7 +956,7 @@ function renderMembrosProjeto(projeto){
     return `<tr>
       <td>${escapeHtml(c.nome)}</td>
       <td class="muted">${escapeHtml(Store.cargoEfetivo(c.id, ctx.anoId, ctx.mes))}</td>
-      <td><input type="number" class="pct" min="0" max="100" step="1" value="${val}"
+      <td><input type="number" class="pct" min="0" max="100" step="0.01" value="${val}"
             data-colab="${c.id}" placeholder="0"></td>
       <td class="num">${formatCurrency(custo)}</td>
       <td class="num total-cell ${totalClass}" data-total-for="${c.id}">${total}%</td>
@@ -1773,10 +1773,15 @@ el('btnDividirIgualColab').addEventListener('click', ()=>{
   // Zera tudo primeiro, pra nunca esbarrar na trava de 100% enquanto os
   // valores antigos e os novos convivem no meio da troca.
   projetos.forEach(p=>{ Store.setAlocacao(ctx.anoId, ctx.mes, colaboradorDetalheId, p.id, 0); });
-  const base = Math.floor(100 / projetos.length);
-  const resto = 100 - base * projetos.length;
+  // Divide com casas decimais (não arredonda pra inteiro) — o último
+  // projeto absorve a pequena diferença de arredondamento, pra fechar
+  // exatamente 100% no total em vez de ficar 1 ponto acima/abaixo nele.
+  const pctBase = Math.round((100 / projetos.length) * 100) / 100;
+  let somaAnteriores = 0;
   projetos.forEach((p,i)=>{
-    const pct = base + (i < resto ? 1 : 0); // distribui o resto nos primeiros, pra fechar 100%
+    const ehUltimo = i === projetos.length - 1;
+    const pct = ehUltimo ? Math.round((100 - somaAnteriores) * 100) / 100 : pctBase;
+    somaAnteriores += pct;
     Store.setAlocacao(ctx.anoId, ctx.mes, colaboradorDetalheId, p.id, pct);
   });
   toast(`Dividido igualmente entre ${projetos.length} projeto${projetos.length>1?'s':''}.`);

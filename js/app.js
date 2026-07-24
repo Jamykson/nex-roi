@@ -1051,6 +1051,14 @@ function parseValorInicio(texto){
 // ---------------------------------------------------------------------------
 // COLABORADOR — DETALHE (em quais projetos ele está, e com que % em cada mês)
 // ---------------------------------------------------------------------------
+// Mesma lista de projetos "disponíveis" que aparece na tabela do colaborador
+// naquele ano/mês — extraída pra função à parte pra poder ser reaproveitada
+// pelo botão "Dividir % igualmente", sem duplicar a regra de filtro.
+function projetosAtivosNoMesParaColaborador(anoObj){
+  const projetosDoAno = edicoesAtivasNoAno(anoObj.ano);
+  return projetosDoAno.filter(p => projetoAtivoNoMes(p, anoObj.ano, ctx.mes));
+}
+
 function renderColaboradorDetalhe(){
   const colab = Store.data.colaboradores.find(c=>c.id===colaboradorDetalheId);
   if(!colab){ setPage('colaboradores'); return; }
@@ -1145,16 +1153,7 @@ function renderColaboradorDetalhe(){
     return;
   }
 
-  const projetosDoAno = edicoesAtivasNoAno(anoObj.ano);
-  if(projetosDoAno.length===0){
-    tbody.innerHTML = '';
-    emptyHint.hidden = false;
-    emptyHint.textContent = `Nenhum projeto cadastrado em ${anoObj.ano} ainda.`;
-    return;
-  }
-  // só mostra projetos que já tinham começado (e ainda não tinham terminado)
-  // no mês selecionado — evita alocar colaborador antes do projeto existir.
-  const projetos = projetosDoAno.filter(p => projetoAtivoNoMes(p, anoObj.ano, ctx.mes));
+  const projetos = projetosAtivosNoMesParaColaborador(anoObj);
   if(projetos.length===0){
     tbody.innerHTML = '';
     emptyHint.hidden = false;
@@ -1763,6 +1762,24 @@ el('btnCopiarMesAnteriorColab').addEventListener('click', ()=>{
   const res = Store.copiarAlocacaoColaboradorMesAnterior(ctx.anoId, colaboradorDetalheId, ctx.mes);
   if(!res.ok){ toast(res.msg); return; }
   toast('Percentuais copiados do mês anterior.');
+  renderColaboradorDetalhe();
+});
+
+el('btnDividirIgualColab').addEventListener('click', ()=>{
+  if(!ctx.anoId || ctx.mes==='ano'){ toast('Selecione um mês específico primeiro.'); return; }
+  const anoObj = Store.getAno(ctx.anoId);
+  const projetos = projetosAtivosNoMesParaColaborador(anoObj);
+  if(projetos.length===0){ toast('Não há projetos disponíveis neste mês.'); return; }
+  // Zera tudo primeiro, pra nunca esbarrar na trava de 100% enquanto os
+  // valores antigos e os novos convivem no meio da troca.
+  projetos.forEach(p=>{ Store.setAlocacao(ctx.anoId, ctx.mes, colaboradorDetalheId, p.id, 0); });
+  const base = Math.floor(100 / projetos.length);
+  const resto = 100 - base * projetos.length;
+  projetos.forEach((p,i)=>{
+    const pct = base + (i < resto ? 1 : 0); // distribui o resto nos primeiros, pra fechar 100%
+    Store.setAlocacao(ctx.anoId, ctx.mes, colaboradorDetalheId, p.id, pct);
+  });
+  toast(`Dividido igualmente entre ${projetos.length} projeto${projetos.length>1?'s':''}.`);
   renderColaboradorDetalhe();
 });
 

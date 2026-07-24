@@ -1227,13 +1227,23 @@ el('ctxProjeto').addEventListener('change', e=>{
 });
 
 document.querySelector('#page-dashboard').addEventListener('click', e=>{
-  const btn = e.target.closest('button[data-action="abrir-projeto-dashboard"]');
-  if(!btn) return;
-  // Mantém o ano/mês que já estava selecionado no Dashboard — a página de
-  // detalhe do projeto usa o mesmo ctx.anoId/ctx.mes globais, então só
-  // trocar o projeto aberto já mostra a data certa.
-  projetoDetalheId = btn.dataset.id;
-  setPage('projeto-detalhe');
+  const btnProjeto = e.target.closest('button[data-action="abrir-projeto-dashboard"]');
+  if(btnProjeto){
+    // Mantém o ano/mês que já estava selecionado no Dashboard — a página de
+    // detalhe do projeto usa o mesmo ctx.anoId/ctx.mes globais, então só
+    // trocar o projeto aberto já mostra a data certa.
+    projetoDetalheId = btnProjeto.dataset.id;
+    setPage('projeto-detalhe');
+    return;
+  }
+  const btnColab = e.target.closest('button[data-action="abrir-colaborador"]');
+  if(btnColab){
+    // Mesma ideia: ctx.anoId/ctx.mes são globais, então abrir o colaborador
+    // já cai direto no mês que estava selecionado no Dashboard.
+    colaboradorDetalheId = btnColab.dataset.id;
+    setPage('colaborador-detalhe');
+    return;
+  }
 });
 
 el('btnVoltarProjetos').addEventListener('click', ()=>{ setPage('projetos'); });

@@ -313,6 +313,8 @@ function renderColaboradoresAgrupados(linhas){
     grupos[indice.get(l.colaborador.id)].itens.push(l);
   });
 
+  grupos.sort((a,b)=>a.colaborador.nome.localeCompare(b.colaborador.nome, 'pt-BR'));
+
   return grupos.map(g=>{
     const n = g.itens.length;
     const linhasHtml = g.itens.map((l,i)=>{

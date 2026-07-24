@@ -21,6 +21,7 @@ let anosProjetosAbertos = new Set(); // anoId dos anos com a lista de "projetos 
 let chartEvolucao = null;
 let chartRoiMensal = null;
 let modoRoiMensal = 'mensal'; // 'mensal' ou 'acumulado'
+let modoEvolucao = 'mensal'; // 'mensal' ou 'acumulado' — mesmo padrão do gráfico de ROI
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -373,21 +374,34 @@ function renderChartEvolucao(){
   const gastos = [], ganhos = [], coresGasto = [], coresGanho = [];
   const corGastoReal = '#C2483C', corGastoPrevisto = '#E8AFA6';
   const corGanhoReal = '#0E7C6B', corGanhoPrevisto = '#9BD1C4';
+  const acumuladoEvolucao = modoEvolucao === 'acumulado';
+  let gastoAcumEvolucao = 0, ganhoAcumEvolucao = 0;
   for(let m=1;m<=12;m++){
     const futuro = Store.ehMesFuturo(ctx.anoId, m);
-    gastos.push(Store.gastoTotalParaRoi(ctx.anoId, m, filtro));
-    ganhos.push(Store.ganho(ctx.anoId, m, filtro));
+    const gastoMes = Store.gastoTotalParaRoi(ctx.anoId, m, filtro);
+    const ganhoMes = Store.ganho(ctx.anoId, m, filtro);
+    if(acumuladoEvolucao){
+      gastoAcumEvolucao += gastoMes;
+      ganhoAcumEvolucao += ganhoMes;
+      gastos.push(gastoAcumEvolucao);
+      ganhos.push(ganhoAcumEvolucao);
+    }else{
+      gastos.push(gastoMes);
+      ganhos.push(ganhoMes);
+    }
     coresGasto.push(futuro ? corGastoPrevisto : corGastoReal);
     coresGanho.push(futuro ? corGanhoPrevisto : corGanhoReal);
   }
+  el('tituloChartEvolucao').textContent = acumuladoEvolucao ? 'Evolução acumulada no ano' : 'Evolução no ano';
+
   if(chartEvolucao) chartEvolucao.destroy();
   chartEvolucao = new Chart(canvas, {
     type: 'bar',
     data: {
       labels: MESES,
       datasets: [
-        { label:'Gasto', data:gastos, backgroundColor:coresGasto, borderRadius:4, maxBarThickness:26 },
-        { label:'Ganho', data:ganhos, backgroundColor:coresGanho, borderRadius:4, maxBarThickness:26 }
+        { label: acumuladoEvolucao ? 'Gasto acumulado' : 'Gasto', data:gastos, backgroundColor:coresGasto, borderRadius:4, maxBarThickness:26 },
+        { label: acumuladoEvolucao ? 'Ganho acumulado' : 'Ganho', data:ganhos, backgroundColor:coresGanho, borderRadius:4, maxBarThickness:26 }
       ]
     },
     options: {
@@ -1219,6 +1233,14 @@ document.body.addEventListener('click', e=>{
   modoRoiMensal = btn.dataset.modoRoi;
   document.querySelectorAll('#toggleRoiModo button').forEach(b=>b.classList.toggle('active', b===btn));
   renderChartRoiMensal();
+});
+
+document.body.addEventListener('click', e=>{
+  const btn = e.target.closest('#toggleEvolucaoModo button');
+  if(!btn) return;
+  modoEvolucao = btn.dataset.modoEvolucao;
+  document.querySelectorAll('#toggleEvolucaoModo button').forEach(b=>b.classList.toggle('active', b===btn));
+  renderChartEvolucao();
 });
 
 el('ctxProjeto').addEventListener('change', e=>{

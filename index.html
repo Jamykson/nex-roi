@@ -147,7 +147,13 @@
       </div>
 
       <div class="panel">
-        <h2>Evolução no ano</h2>
+        <div class="toolbar-row" style="justify-content:space-between; margin-bottom:4px; flex-wrap:wrap; gap:12px;">
+          <h2 style="margin-bottom:0;" id="tituloChartEvolucao">Evolução no ano</h2>
+          <div class="month-tabs" id="toggleEvolucaoModo">
+            <button data-modo-evolucao="mensal" class="active">Mensal</button>
+            <button data-modo-evolucao="acumulado">Acumulado</button>
+          </div>
+        </div>
         <div style="position:relative; height:300px;">
           <canvas id="chartEvolucao"></canvas>
         </div>

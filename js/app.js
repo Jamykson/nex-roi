@@ -16,6 +16,23 @@ const ctx = {
 
 let projetoDetalheId = null; // projeto aberto na página de detalhe
 let colaboradorDetalheId = null; // colaborador aberto na página de detalhe
+
+// O app só busca os dados do Supabase UMA VEZ, quando a página carrega — não
+// fica escutando mudanças em tempo real. Isso significa que, se alguém
+// preencher o formulário público (preencher.html) em outro aparelho/aba
+// enquanto esta aba já estava aberta, essa aba não vê a atualização sozinha.
+// Por isso, toda vez que se abre a tela de um colaborador — o lugar onde o
+// status "já confirmou este mês" é mostrado — buscamos os dados de novo.
+async function abrirColaboradorDetalhe(id){
+  colaboradorDetalheId = id;
+  setPage('colaborador-detalhe'); // navega já, com o que tiver em memória
+  await Store.load();
+  // Só re-renderiza se o usuário ainda estiver olhando esse colaborador
+  // (evita sobrescrever a tela se ele já tiver saído/trocado de aba rápido).
+  if(colaboradorDetalheId === id && currentPage()==='colaborador-detalhe'){
+    rerenderCurrent();
+  }
+}
 let projetosGruposAbertos = new Set(); // ids (do projeto mais antigo da cadeia) que estão expandidos na lista de Projetos
 let anosProjetosAbertos = new Set(); // anoId dos anos com a lista de "projetos ativos" expandida na aba Anos
 let chartEvolucao = null;
@@ -1268,12 +1285,11 @@ document.querySelector('#page-dashboard').addEventListener('click', e=>{
     setPage('projeto-detalhe');
     return;
   }
-  const btnColab = e.target.closest('button[data-action="abrir-colaborador"]');
+    const btnColab = e.target.closest('button[data-action="abrir-colaborador"]');
   if(btnColab){
     // Mesma ideia: ctx.anoId/ctx.mes são globais, então abrir o colaborador
     // já cai direto no mês que estava selecionado no Dashboard.
-    colaboradorDetalheId = btnColab.dataset.id;
-    setPage('colaborador-detalhe');
+    abrirColaboradorDetalhe(btnColab.dataset.id);
     return;
   }
 });
@@ -1495,9 +1511,8 @@ document.querySelector('#page-colaboradores').addEventListener('click', e=>{
   const btn = e.target.closest('button[data-action]');
   if(!btn) return;
   const { action, id } = btn.dataset;
-  if(action==='abrir-colaborador'){
-    colaboradorDetalheId = id;
-    setPage('colaborador-detalhe');
+    if(action==='abrir-colaborador'){
+    abrirColaboradorDetalhe(id);
   }
   if(action==='editar-colab'){
     const c = Store.data.colaboradores.find(x=>x.id===id);
@@ -1820,6 +1835,15 @@ el('btnCopiarLinkPreenchimentoGeral').addEventListener('click', async ()=>{
   }catch(e){
     toast('Não deu pra copiar automaticamente. Link: ' + link);
   }
+});
+
+el('btnAtualizarColabDetalhe').addEventListener('click', async ()=>{
+  const id = colaboradorDetalheId;
+  await Store.load();
+  if(colaboradorDetalheId === id && currentPage()==='colaborador-detalhe'){
+    rerenderCurrent();
+  }
+  toast('Dados atualizados.');
 });
 
 el('btnCopiarLinkPreenchimento').addEventListener('click', async ()=>{

@@ -1809,6 +1809,19 @@ el('btnCopiarMesAnteriorColab').addEventListener('click', ()=>{
   renderColaboradorDetalhe();
 });
 
+el('btnCopiarLinkPreenchimentoGeral').addEventListener('click', async ()=>{
+  if(!ctx.anoId || ctx.mes==='ano'){ toast('Selecione um mês específico no topo primeiro.'); return; }
+  // Link único (sem colab= na URL) — quem abrir escolhe o próprio nome na
+  // página de preenchimento, em vez de já vir pré-preenchido pra uma pessoa.
+  const link = new URL(`preencher.html?ano=${ctx.anoId}&mes=${ctx.mes}`, location.href).toString();
+  try{
+    await navigator.clipboard.writeText(link);
+    toast('Link copiado! Envie pra todo mundo preencher esse mês.');
+  }catch(e){
+    toast('Não deu pra copiar automaticamente. Link: ' + link);
+  }
+});
+
 el('btnCopiarLinkPreenchimento').addEventListener('click', async ()=>{
   if(!ctx.anoId || ctx.mes==='ano'){ toast('Selecione um mês específico primeiro.'); return; }
   // O link já carrega o ano/mês escolhidos aqui — o colaborador não escolhe

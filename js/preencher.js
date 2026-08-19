@@ -120,6 +120,12 @@ function edicoesAtivasNoAno(anoNum){
     return;
   }
 
+  // Se o link original não tinha "colab" (veio do botão da lista de
+  // Colaboradores), mostra um link "Não é você?" pra voltar ao seletor.
+  // (precisa ficar ANTES do return abaixo, senão nunca é inicializada
+  // quando o link é o geral — e daí "iniciarFormulario" quebra ao usá-la)
+  const linkEraGeral = !params.get('colab');
+
   // Sem colab= na URL: mostra a tela de "quem é você" antes do formulário.
   if(!colabId){
     renderSeletorColaborador();
@@ -172,11 +178,7 @@ function edicoesAtivasNoAno(anoNum){
     });
   }
 
-  // Se o link original não tinha "colab" (veio do botão da lista de
-  // Colaboradores), mostra um link "Não é você?" pra voltar ao seletor.
-  const linkEraGeral = !params.get('colab');
-
-    function iniciarFormulario(colab){
+  function iniciarFormulario(colab){
     function totalAtual(){
       return Array.from(document.querySelectorAll('.pct'))
         .reduce((s,inp)=> s + (parseFloat((inp.value||'0').toString().replace(',','.')) || 0), 0);

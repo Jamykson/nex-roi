@@ -238,7 +238,7 @@ function edicoesAtivasNoAno(anoNum){
       }
     }
 
-    function confirmar(){
+        function confirmar(){
       const total = totalAtual();
       if(total > 100.01){
         toast('A soma passou de 100%. Ajuste os valores antes de confirmar.');
@@ -253,7 +253,34 @@ function edicoesAtivasNoAno(anoNum){
       }
       Store.confirmarPreenchimento(colab.id, anoObj.id, mes);
       toast('Preenchimento confirmado! Obrigado.');
-      render();
+      renderConcluido();
+    }
+
+    // Tela final, depois de confirmar — substitui o formulário por um
+    // aviso de "obrigado", em vez de deixar a tabela editável aberta na
+    // tela. Quem precisar corrigir algo pode reabrir pelo link "Ajustar".
+    function renderConcluido(){
+      root.innerHTML = `
+        <div class="panel" style="text-align:center; padding:40px 24px;">
+          <p style="font-size:32px; margin-bottom:8px;">✓</p>
+          <h1 style="margin-bottom:8px;">Obrigado, ${escapeHtml(colab.nome)}!</h1>
+          <p class="muted" style="margin-bottom:20px;">Seu preenchimento de ${MESES_LONGO[mes-1]} de ${anoObj.ano} foi confirmado.</p>
+          <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+            <button type="button" class="ghost-btn" id="btnAjustarConcluido">Ajustar resposta</button>
+            ${linkEraGeral ? `<button type="button" class="ghost-btn" id="btnTrocarConcluido">Preencher para outra pessoa</button>` : ''}
+          </div>
+        </div>
+      `;
+      el('btnAjustarConcluido').addEventListener('click', render);
+      if(linkEraGeral){
+        el('btnTrocarConcluido').addEventListener('click', ()=>{
+          colabId = null;
+          const url = new URL(location.href);
+          url.searchParams.delete('colab');
+          history.replaceState(null, '', url);
+          renderSeletorColaborador();
+        });
+      }
     }
 
     render();

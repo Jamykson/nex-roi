@@ -322,8 +322,9 @@
 
       <div class="panel">
         <div class="toolbar-row" style="justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:12px;">
-          <h2 style="margin-bottom:0;">Projetos deste colaborador</h2>
+                    <h2 style="margin-bottom:0;">Projetos deste colaborador</h2>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="ghost-btn" id="btnCopiarLinkPreenchimento">Copiar link de preenchimento</button>
             <button class="ghost-btn" id="btnDividirIgualColab">Dividir % igualmente</button>
             <button class="ghost-btn" id="btnCopiarMesAnteriorColab">Copiar % do mês anterior</button>
           </div>
@@ -338,7 +339,8 @@
             <div class="month-tabs" id="colabMeses"></div>
           </div>
         </div>
-        <p class="muted small" id="colabProjetosInfo" style="margin-bottom:12px;"></p>
+        <p class="muted small" id="colabProjetosInfo" style="margin-bottom:4px;"></p>
+        <p class="small" id="colabConfirmacaoStatus" style="margin-bottom:12px;"></p>
         <div class="toolbar-row" style="gap:32px; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap;">
           <div style="min-width:200px; max-width:240px;">
             <div class="field">

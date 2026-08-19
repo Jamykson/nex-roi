@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEX · Preenchimento individual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..900&family=Archivo+Black&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* Esta página é standalone (não usa o layout de sidebar do app principal)
+     — só um cartão centralizado, reaproveitando as mesmas classes visuais
+     (panel, page-head, data-table, primary-btn etc.) do css/style.css. */
+  body{ display:flex; justify-content:center; padding:32px 16px; }
+  .preencher-wrap{ width:100%; max-width:640px; }
+</style>
+</head>
+<body>
+
+  <div class="preencher-wrap" id="conteudo">
+    <div class="panel"><p class="muted">Carregando…</p></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/supabase.min.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/preencher.js"></script>
+</body>
+</html>

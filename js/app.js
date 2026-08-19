@@ -1098,7 +1098,7 @@ function renderColaboradorDetalhe(){
   const tbody = document.querySelector('#tblProjetosColaborador tbody');
   const emptyHint = el('colabProjetosEmpty');
 
-  if(!ctx.anoId){
+    if(!ctx.anoId){
     info.textContent = 'Selecione um ano (na aba Anos ou no Dashboard) para ver os projetos deste colaborador.';
     tbody.innerHTML = '';
     emptyHint.hidden = true;
@@ -1107,9 +1107,11 @@ function renderColaboradorDetalhe(){
     el('colabCargoMes').innerHTML = '';
     el('colabCargoMesInfo').textContent = '';
     el('wrapColabCargoMesSalario').hidden = true;
+    el('btnCopiarLinkPreenchimento').disabled = true;
+    el('colabConfirmacaoStatus').innerHTML = '';
     return;
   }
-  if(ctx.mes === 'ano'){
+    if(ctx.mes === 'ano'){
     info.textContent = 'Selecione um mês específico no topo para ver e editar o % deste colaborador em cada projeto (a alocação é sempre mensal).';
     tbody.innerHTML = '';
     emptyHint.hidden = true;
@@ -1118,13 +1120,21 @@ function renderColaboradorDetalhe(){
     el('colabCargoMes').innerHTML = '';
     el('colabCargoMesInfo').textContent = 'Selecione um mês específico para agendar uma mudança de cargo.';
     el('wrapColabCargoMesSalario').hidden = true;
+    el('btnCopiarLinkPreenchimento').disabled = true;
+    el('colabConfirmacaoStatus').innerHTML = '';
     return;
   }
 
   const anoObj = Store.getAno(ctx.anoId);
   const total = Store.totalAlocadoColaborador(ctx.anoId, ctx.mes, colab.id);
   const totalClass = total===100 ? 'total-ok' : (total===0 ? '' : 'total-bad');
-  info.innerHTML = `Envolvimento de <strong>${escapeHtml(colab.nome)}</strong> em cada projeto de ${anoObj.ano} durante ${MESES_LONGO[ctx.mes-1]}. Total alocado no mês: <span class="total-cell ${totalClass}" id="colabTotalMes">${total}%</span>.`;
+    info.innerHTML = `Envolvimento de <strong>${escapeHtml(colab.nome)}</strong> em cada projeto de ${anoObj.ano} durante ${MESES_LONGO[ctx.mes-1]}. Total alocado no mês: <span class="total-cell ${totalClass}" id="colabTotalMes">${total}%</span>.`;
+
+  el('btnCopiarLinkPreenchimento').disabled = false;
+  const confirmacao = Store.getConfirmacao(colab.id, ctx.anoId, ctx.mes);
+  el('colabConfirmacaoStatus').innerHTML = confirmacao
+    ? `<span class="badge impacto">✓ confirmado</span> <span class="muted">em ${new Date(confirmacao.confirmadoEm).toLocaleString('pt-BR')}</span>`
+    : `<span class="badge pontual">ainda não confirmou este mês</span>`;
 
   const ajuste = Store.getSalarioPontual(colab.id, ctx.anoId, ctx.mes);
   el('colabSalarioMes').value = ajuste ? ajuste.valor : '';
@@ -1797,6 +1807,19 @@ el('btnCopiarMesAnteriorColab').addEventListener('click', ()=>{
   if(!res.ok){ toast(res.msg); return; }
   toast('Percentuais copiados do mês anterior.');
   renderColaboradorDetalhe();
+});
+
+el('btnCopiarLinkPreenchimento').addEventListener('click', async ()=>{
+  if(!ctx.anoId || ctx.mes==='ano'){ toast('Selecione um mês específico primeiro.'); return; }
+  // O link já carrega o ano/mês escolhidos aqui — o colaborador não escolhe
+  // nada na página dele, só preenche o mês que este link representa.
+  const link = new URL(`preencher.html?colab=${colaboradorDetalheId}&ano=${ctx.anoId}&mes=${ctx.mes}`, location.href).toString();
+  try{
+    await navigator.clipboard.writeText(link);
+    toast('Link copiado! Envie pro colaborador preencher esse mês.');
+  }catch(e){
+    toast('Não deu pra copiar automaticamente. Link: ' + link);
+  }
 });
 
 el('btnDividirIgualColab').addEventListener('click', ()=>{

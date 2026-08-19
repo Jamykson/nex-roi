@@ -183,8 +183,8 @@ function renderDashboard(){
   // "Inclui previsão" tanto quando um mês futuro específico está selecionado,
   // quanto quando "Ano todo" está selecionado e o ano ainda não terminou —
   // já que nesse caso a soma do ano mistura meses reais com previstos.
-  const incluiPrevisao = !semAno && anoObj.ano === anoRealAtualSubt &&
-    (ctx.mes === 'ano' ? mesRealAtualSubt < 12 : ctx.mes > mesRealAtualSubt);
+    const incluiPrevisao = !semAno && anoObj.ano === anoRealAtualSubt &&
+    (ctx.mes === 'ano' ? true : ctx.mes >= mesRealAtualSubt);
   el('dashSubtitle').innerHTML = semAno
     ? 'Crie um ano na aba "Anos" para começar.'
     : `${anoObj.ano} · ${periodoTexto()} · ${projTxt}` + (incluiPrevisao ? ' · <span class="badge previsao">Previsão</span> inclui gastos e ganhos que ainda não ocorreram' : '');
@@ -417,12 +417,12 @@ function renderChartEvolucao(){
     }
   });
 
-  const anoRealAtual = new Date().getFullYear();
+    const anoRealAtual = new Date().getFullYear();
   const mesRealAtual = new Date().getMonth() + 1;
   const anoObjChart = Store.getAno(ctx.anoId);
   const legenda = el('chartPrevisaoLegenda');
-  if(anoObjChart && anoObjChart.ano === anoRealAtual && mesRealAtual < 12){
-    legenda.innerHTML = `<span class="badge previsao">Previsão</span> Barras mais claras (a partir de ${MESES_LONGO[mesRealAtual]}) são meses que ainda não aconteceram: o Ganho já está lançado, mas o Gasto é uma estimativa com a equipe de hoje.`;
+  if(anoObjChart && anoObjChart.ano === anoRealAtual){
+    legenda.innerHTML = `<span class="badge previsao">Previsão</span> Barras mais claras (a partir de ${MESES_LONGO[mesRealAtual-1]}) são meses que ainda não foram confirmados: o Ganho já está lançado, mas o Gasto é uma estimativa com a última equipe/alocação conhecida.`;
   }else{
     legenda.textContent = '';
   }
@@ -494,8 +494,8 @@ function renderChartRoiMensal(){
   const mesRealRoi = new Date().getMonth() + 1;
   const anoObjRoi = Store.getAno(ctx.anoId);
   const legendaRoi = el('chartRoiPrevisaoLegenda');
-  if(anoObjRoi && anoObjRoi.ano === anoRealRoi && mesRealRoi < 12){
-    legendaRoi.innerHTML = `<span class="badge previsao">Previsão</span> Meses mais claros (a partir de ${MESES_LONGO[mesRealRoi]}) usam o Gasto estimado com a equipe de hoje.`;
+  if(anoObjRoi && anoObjRoi.ano === anoRealRoi){
+    legendaRoi.innerHTML = `<span class="badge previsao">Previsão</span> Meses mais claros (a partir de ${MESES_LONGO[mesRealRoi-1]}) usam o Gasto estimado com a última equipe/alocação conhecida.`;
   }else{
     legendaRoi.textContent = '';
   }

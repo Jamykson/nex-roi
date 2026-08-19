@@ -778,21 +778,36 @@ const Store = {
     return this.gastoFolha(anoId, mes, projetoFiltro, semCultura) + this.gastoExtra(anoId, mes, projetoFiltro, semCultura);
   },
 
+    // "Mês futuro" pra fins de previsão inclui o mês CORRENTE também — porque
+  // o preenchimento de um mês só é feito depois que ele termina (ex.: agosto
+  // só é preenchido em setembro). Enquanto isso não acontece, o mês corrente
+  // fica sem alocações reais, e precisa da mesma previsão que um mês futuro.
   ehMesFuturo(anoId, mes){
     const anoObj = this.getAno(anoId);
     if(!anoObj) return false;
     const anoReal = new Date().getFullYear();
     const mesReal = new Date().getMonth() + 1;
     if(anoObj.ano !== anoReal) return anoObj.ano > anoReal;
-    return mes > mesReal;
+    return mes >= mesReal;
   },
 
-  gastoFolhaProjetado(anoId, mesAlvo, projetoFiltro, semCultura){
+    gastoFolhaProjetado(anoId, mesAlvo, projetoFiltro, semCultura){
     const anoObj = this.getAno(anoId);
     if(!anoObj) return 0;
     const anoReal = new Date().getFullYear();
     const mesReal = new Date().getMonth() + 1;
-    const mesBase = (anoObj.ano === anoReal) ? mesReal : 12;
+    const mesLimite = (anoObj.ano === anoReal) ? mesReal : 12;
+    // Acha o mês mais recente, olhando pra trás a partir de hoje (nunca pra
+    // frente), que já tem alocações preenchidas — é nele que a previsão se
+    // baseia. Isso cobre tanto o mês corrente (ainda não preenchido, porque
+    // só dá pra preencher depois que ele termina) quanto meses futuros —
+    // ambos repetem a última equipe/alocação conhecida, em vez de ficarem
+    // zerados só porque ninguém confirmou ainda.
+    let mesBase = mesLimite;
+    while(mesBase >= 1 && this.getAlocacoesDoMes(anoId, mesBase).length === 0){
+      mesBase--;
+    }
+    if(mesBase < 1) return 0; // nenhum mês do ano tem dados preenchidos ainda
     const alocsBase = this.getAlocacoesDoMes(anoId, mesBase)
       .filter(a=> this._matchProjeto(a.projetoId, projetoFiltro))
       .filter(a=> !semCultura || this._projetoContaComoImpacto(a.projetoId, anoId, mesAlvo));

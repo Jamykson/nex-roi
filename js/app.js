@@ -1237,7 +1237,21 @@ el('nav').addEventListener('click', e=>{
   const btn = e.target.closest('.nav-item');
   if(!btn) return;
   setPage(btn.dataset.page);
+  fecharMenuMobile(); // no celular, escolher uma página já fecha a gaveta
 });
+
+// Menu-gaveta do celular: abre com o botão ☰, fecha tocando no fundo
+// escurecido ou escolhendo uma página no menu.
+function abrirMenuMobile(){
+  el('nav').closest('.sidebar').classList.add('open');
+  document.body.classList.add('menu-open');
+}
+function fecharMenuMobile(){
+  el('nav').closest('.sidebar').classList.remove('open');
+  document.body.classList.remove('menu-open');
+}
+el('btnMenuToggle').addEventListener('click', abrirMenuMobile);
+el('sidebarBackdrop').addEventListener('click', fecharMenuMobile);
 
 el('ctxAno').addEventListener('change', e=>{
   ctx.anoId = e.target.value || null;

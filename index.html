@@ -10,6 +10,19 @@
 </head>
 <body>
 
+<!-- Barra de topo só aparece no celular (ver CSS); tem o botão que abre o
+     menu lateral, que no mobile fica escondido fora da tela por padrão. -->
+<div class="mobile-topbar">
+  <button class="menu-toggle" id="btnMenuToggle" aria-label="Abrir menu">
+    <svg class="icon" viewBox="0 0 20 20" style="width:20px;height:20px"><path d="M3 5.5h14M3 10h14M3 14.5h14"/></svg>
+  </button>
+  <div class="brand-text">
+    <strong>NEX</strong>
+    <small>ROI de Projetos</small>
+  </div>
+</div>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
 <div class="app">
 
   <!-- SIDEBAR -->
@@ -181,6 +194,7 @@
         <p class="muted">Os anos de 2020 até o atual já existem prontos. Um ano novo aparece automaticamente quando o calendário virar.</p>
       </div>
       <div class="panel">
+                <div class="table-scroll">
         <table class="data-table" id="tblAnos">
           <thead><tr><th>Ano</th><th>Projetos</th><th>Ganhos gerais</th><th></th></tr></thead>
           <tbody></tbody>
@@ -222,10 +236,12 @@
         </form>
       </div>
       <div class="panel" id="panelGanhosGeraisLista">
+                <div class="table-scroll">
         <table class="data-table" id="tblGanhosGerais">
           <thead><tr><th>Descrição</th><th>Tipo</th><th>Período</th><th class="num">Valor/mês</th><th></th></tr></thead>
           <tbody></tbody>
         </table>
+        </div>
       </div>
     </section>
 
@@ -274,6 +290,7 @@
         </form>
       </div>
       <div class="panel">
+                <div class="table-scroll">
         <table class="data-table" id="tblColaboradores">
           <thead><tr><th>Nome</th><th>Cargo</th><th>Entrada</th><th>Situação</th><th class="num">Custo mensal</th><th></th></tr></thead>
           <tbody></tbody>
@@ -423,6 +440,7 @@
         </form>
       </div>
       <div class="panel">
+                <div class="table-scroll">
         <table class="data-table" id="tblProjetos">
         <thead><tr><th></th><th>Projeto</th><th>Ano</th><th>Tipo</th><th>Período</th><th class="num">Membros no mês</th><th class="num">Gasto</th><th class="num">Ganho</th><th class="num">Saldo</th><th></th></tr></thead>          <tbody></tbody>
         </table>
@@ -566,11 +584,13 @@
           </div>
         </form>
       </div>
-      <div class="panel">
+            <div class="panel">
+        <div class="table-scroll">
         <table class="data-table" id="tblGastosProjeto">
           <thead><tr><th>Descrição</th><th>Tipo</th><th>Período</th><th class="num">Valor/mês</th><th></th></tr></thead>
           <tbody></tbody>
         </table>
+        </div>
       </div>
     </section>
 
